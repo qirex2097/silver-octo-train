@@ -1,7 +1,19 @@
 use std::io::{stdin, stdout, Write};
-use termion::{screen::IntoAlternateScreen, raw::IntoRawMode};
+use termion::{screen::IntoAlternateScreen, raw::IntoRawMode, raw::RawTerminal};
 use termion::event::{Event, Key};
 use termion::input::TermRead;
+
+struct TerminalRestorer {
+    terminal: Option<RawTerminal<std::io::Stdout>>
+}
+
+impl Drop for TerminalRestorer {
+    fn drop(&mut self) {
+        if let Some(ref mut terminal) = self.terminal {
+            terminal.suspend_raw_mode().ok();
+        }
+    }
+}
 
 fn main() -> Result<(), std::io::Error> {
     let stdout = stdout().into_alternate_screen()?;
