@@ -59,13 +59,13 @@ fn main() -> Result<(), std::io::Error> {
                 cursor_y = std::cmp::min(cursor_y + 1, 18 - 1);
             }
             Event::Key(Key::Char('H')) => {
-                cursor_x = if cursor_x < 2 { 1 } else { (cursor_x / 2) * 2 + 1 - 2 }
+                cursor_x = std::cmp::max(((cursor_x / 2) * 2 + 1).saturating_sub(2), 1);
             }
             Event::Key(Key::Char('L')) => {
                 cursor_x = std::cmp::min((cursor_x / 2) * 2 + 1 + 2, 18 - 1);
             }
             Event::Key(Key::Char('K')) => {
-                cursor_y = if cursor_y < 2 { 1 } else { (cursor_y / 2) * 2 + 1 - 2 }
+                cursor_y = std::cmp::max(((cursor_y / 2) * 2 + 1).saturating_sub(2), 1);
             }
             Event::Key(Key::Char('J')) => {
                 cursor_y = std::cmp::min((cursor_y / 2) * 2 + 1 + 2, 18 - 1);
