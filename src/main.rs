@@ -12,8 +12,12 @@ fn main() -> Result<(), std::io::Error> {
 
     let stdin = stdin();
     for event in stdin.events() {
-        if event? == Event::Key(Key::Ctrl('c')) {
-            return Ok(());
+        let event = event?;
+        match event {
+            Event::Key(Key::Ctrl('c')) | Event::Key(Key::Char('q')) => {
+                break;
+            }
+            _ => {}
         }
     }
 
