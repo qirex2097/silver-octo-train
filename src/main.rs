@@ -83,7 +83,7 @@ fn main() -> Result<(), std::io::Error> {
     Ok(())
 }
 
-fn draw<T: std::io::Write>(stdout: &mut RawTerminal<T>, disp_arr: &[[char; 19]; 19]) -> Result<(), std::io::Error> {
+fn draw<T: std::io::Write>(stdout: &mut RawTerminal<T>, disp_arr: &DispArray) -> Result<(), std::io::Error> {
     for (y, line) in disp_arr.iter().enumerate() {
         let line: String = line.iter().collect();
         write!(stdout, "{}{}", cursor::Goto(1, y as u16 + 1), line)?;

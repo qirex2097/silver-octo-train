@@ -1,11 +1,16 @@
+const GRID_SIZE: usize = 19;
+const CURSOR_MIN: usize = 1;
+const CURSOR_MAX: usize = 17;
+
+pub type DispArray = [[char; GRID_SIZE]; GRID_SIZE];
 pub struct DispField {
-    pub disp_arr: [[char; 19]; 19],
+    pub disp_arr: DispArray,
     pub cursor: (usize, usize),
 }
 
 impl DispField {
     pub fn new() -> DispField {
-        let disp_arr: [[char; 19]; 19] = [
+        let disp_arr: [[char; GRID_SIZE]; GRID_SIZE] = [
             [ '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', ],
             [ '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ],
             [ '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', ],
@@ -27,12 +32,12 @@ impl DispField {
             [ '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', ],
         ];
 
-        DispField { disp_arr, cursor: (1, 1), }
+        DispField { disp_arr, cursor: (CURSOR_MIN, CURSOR_MIN), }
     }
 }
 
 impl DispField {
-    pub fn get_disp_arr(&self) -> &[[char; 19]; 19] {
+    pub fn get_disp_arr(&self) -> &[[char; GRID_SIZE]; GRID_SIZE] {
         &self.disp_arr
     }
     pub fn get_cursor(&self) -> (usize, usize) {
@@ -45,16 +50,16 @@ impl DispField {
 
 impl DispField {
     pub fn move_cursor_left(&mut self) {
-        self.cursor = cursor_left(self.cursor);
+        self.cursor.0 = std::cmp::max(self.cursor.0 - 1, CURSOR_MIN);
     }
     pub fn move_cursor_right(&mut self) {
-        self.cursor = cursor_right(self.cursor);
+        self.cursor.0 = std::cmp::min(self.cursor.0 + 1, CURSOR_MAX);
     }
     pub fn move_cursor_up(&mut self) {
-        self.cursor = cursor_up(self.cursor);
+        self.cursor.1 = std::cmp::max(self.cursor.1 - 1, CURSOR_MIN);
     }
     pub fn move_cursor_down(&mut self) {
-        self.cursor = cursor_down(self.cursor);
+        self.cursor.1 = std::cmp::min(self.cursor.1 + 1, CURSOR_MAX);
     }
     pub fn move_cursor_left_cell(&mut self) {
         self.cursor = cursor_left_cell(self.cursor);
@@ -103,19 +108,6 @@ fn get_cell_coords(cursor: (usize, usize)) -> (usize, usize) {
 }
 fn get_cursor_from_cell_coords(cell_coords: (usize, usize)) -> (usize, usize) {
     (cell_coords.0 * 2 + 1, cell_coords.1 * 2 + 1)
-}
-fn cursor_left(cursor: (usize, usize)) -> (usize, usize) {
-    (std::cmp::max(cursor.0 - 1, 1), cursor.1)
-}
-fn cursor_right(cursor: (usize, usize)) -> (usize, usize) {
-    (std::cmp::min(cursor.0 + 1, 18 - 1), cursor.1)
-}
-fn cursor_up(cursor: (usize, usize)) -> (usize, usize) {
-    (cursor.0, std::cmp::max(cursor.1 - 1, 1))
-}
-fn cursor_down(cursor: (usize, usize)) -> (usize, usize) {
-    (cursor.0, std::cmp::min(cursor.1 + 1, 18 - 1))
-
 }
 
 fn cursor_left_cell(cursor: (usize, usize)) -> (usize, usize) {
@@ -176,21 +168,21 @@ mod tests {
         assert_eq!(get_cell_coords((7, 7)), (3, 3));
     }
     #[test]
-    fn it_works() {
+    fn test_cursor_boundaries() {
         let mut disp: DispField = DispField::new();
         assert_eq!(get_cell_coords(disp.cursor), (0, 0));
         assert_eq!(disp.cursor, (1, 1));
-        disp.cursor = cursor_left(disp.cursor);
+        disp.move_cursor_left();
         assert_eq!(disp.cursor, (1, 1));
-        disp.cursor = cursor_right(disp.cursor);
+        disp.move_cursor_right();
         assert_eq!(disp.cursor, (2, 1));
-        disp.cursor = cursor_up(disp.cursor);
+        disp.move_cursor_up();
         assert_eq!(disp.cursor, (2, 1));
-        disp.cursor = cursor_down(disp.cursor);
+        disp.move_cursor_down();
         assert_eq!(disp.cursor, (2, 2));
-        disp.cursor = cursor_left(disp.cursor);
+        disp.move_cursor_left();
         assert_eq!(disp.cursor, (1, 2));
-        disp.cursor = cursor_up(disp.cursor);
+        disp.move_cursor_up();
         assert_eq!(disp.cursor, (1, 1));
     }
 }
