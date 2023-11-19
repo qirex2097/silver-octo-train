@@ -26,16 +26,16 @@ fn main() -> Result<(), std::io::Error> {
                 break;
             }
             Event::Key(Key::Char('h')) => {
-                disp.cursor = cursor_left(disp.cursor);
+                disp.move_cursor_left();
             }
             Event::Key(Key::Char('l')) => {
-                disp.cursor = cursor_right(disp.cursor);
+                disp.move_cursor_right();
             }
             Event::Key(Key::Char('k')) => {
-                disp.cursor = cursor_up(disp.cursor);
+                disp.move_cursor_up();
             }
             Event::Key(Key::Char('j')) => {
-                disp.cursor = cursor_down(disp.cursor);
+                disp.move_cursor_down();
             }
             Event::Key(Key::Char('H')) => {
                 disp.cursor = cursor_left_cell(disp.cursor);
