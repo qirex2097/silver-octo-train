@@ -44,6 +44,18 @@ impl DispField {
     pub fn move_cursor_down(&mut self) {
         self.cursor = cursor_down(self.cursor);
     }
+    pub fn move_cursor_left_cell(&mut self) {
+        self.cursor = cursor_left_cell(self.cursor);
+    }
+    pub fn move_cursor_right_cell(&mut self) {
+        self.cursor = cursor_right_cell(self.cursor);
+    }
+    pub fn move_cursor_up_cell(&mut self) {
+        self.cursor = cursor_up_cell(self.cursor);
+    }
+    pub fn move_cursor_down_cell(&mut self) {
+        self.cursor = cursor_down_cell(self.cursor);
+    }
 }
 
 pub fn get_cell_coords(cursor: (usize, usize)) -> (usize, usize) {

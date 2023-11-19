@@ -38,25 +38,29 @@ fn main() -> Result<(), std::io::Error> {
                 disp.move_cursor_down();
             }
             Event::Key(Key::Char('H')) => {
-                disp.cursor = cursor_left_cell(disp.cursor);
+                disp.move_cursor_left_cell();
+//                disp.cursor = cursor_left_cell(disp.cursor);
                 let (cursor_x, cursor_y) = disp.cursor;
                 let disp_arr = &mut disp.disp_arr;
                 disp_arr[cursor_y][cursor_x + 1] = if cursor_y % 2 == 1 && prev_cursor_x != cursor_x { ' ' } else { disp_arr[cursor_y][cursor_x + 1] };
             }
             Event::Key(Key::Char('L')) => {
-                disp.cursor = cursor_right_cell(disp.cursor);
+                disp.move_cursor_right_cell();
+//                disp.cursor = cursor_right_cell(disp.cursor);
                 let (cursor_x, cursor_y) = disp.cursor;
                 let disp_arr = &mut disp.disp_arr;
                 disp_arr[cursor_y][cursor_x - 1] = if cursor_y % 2 == 1 && prev_cursor_x != cursor_x { ' ' } else { disp_arr[cursor_y][cursor_x - 1] };
             }
             Event::Key(Key::Char('K')) => {
-                disp.cursor = cursor_up_cell(disp.cursor);
+                disp.move_cursor_up_cell();
+//                disp.cursor = cursor_up_cell(disp.cursor);
                 let (cursor_x, cursor_y) = disp.cursor;
                 let disp_arr = &mut disp.disp_arr;
                 disp_arr[cursor_y + 1][cursor_x] = if cursor_x % 2 == 1 && prev_cursor_y != cursor_y { ' ' } else { disp_arr[cursor_y + 1][cursor_x] };
             }
             Event::Key(Key::Char('J')) => {
-                disp.cursor = cursor_down_cell(disp.cursor);
+                disp.move_cursor_down_cell();
+//                disp.cursor = cursor_down_cell(disp.cursor);
                 let (cursor_x, cursor_y) = disp.cursor;
                 let disp_arr = &mut disp.disp_arr;
                 disp_arr[cursor_y - 1][cursor_x] = if cursor_x % 2 == 1 && prev_cursor_y != cursor_y { ' ' } else { disp_arr[cursor_y - 1][cursor_x] };
