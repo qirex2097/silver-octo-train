@@ -18,6 +18,7 @@ fn main() -> Result<(), std::io::Error> {
 
     let stdin = stdin();
     for event in stdin.events() {
+        let prev_cursor = disp.get_cursor();
         let event = event?;
         match event {
             Event::Key(Key::Ctrl('c')) | Event::Key(Key::Char('q')) => {
@@ -36,36 +37,20 @@ fn main() -> Result<(), std::io::Error> {
                 disp.move_cursor_down();
             }
             Event::Key(Key::Char('H')) | Event::Key(Key::Char('h'))=> {
-                let prev_cursor = disp.get_cursor();
                 disp.move_cursor_left_cell();
-                let curr_cursor = disp.get_cursor();
-                if prev_cursor.0 != curr_cursor.0 && event == Event::Key(Key::Char('H')) {
-                    disp.clear_right_wall();
-                }
+                handle_remove_wall(&mut disp, prev_cursor, event);
             }
             Event::Key(Key::Char('L')) | Event::Key(Key::Char('l')) => {
-                let prev_cursor = disp.get_cursor();
                 disp.move_cursor_right_cell();
-                let curr_cursor = disp.get_cursor();
-                if prev_cursor.0 != curr_cursor.0 && event == Event::Key(Key::Char('L')) {
-                    disp.clear_left_wall();
-                }
+                handle_remove_wall(&mut disp, prev_cursor, event);
             }
             Event::Key(Key::Char('K')) | Event::Key(Key::Char('k'))=> {
-                let prev_cursor = disp.get_cursor();
                 disp.move_cursor_up_cell();
-                let curr_cursor = disp.get_cursor();
-                if prev_cursor.1 != curr_cursor.1 && event == Event::Key(Key::Char('K')) {
-                    disp.clear_down_wall();
-                }
+                handle_remove_wall(&mut disp, prev_cursor, event);
             }
             Event::Key(Key::Char('J')) | Event::Key(Key::Char('j'))=> {
-                let prev_cursor = disp.get_cursor();
                 disp.move_cursor_down_cell();
-                let curr_cursor = disp.get_cursor();
-                if prev_cursor.1 != curr_cursor.1 && event == Event::Key(Key::Char('J')) {
-                    disp.clear_up_wall();
-                }
+                handle_remove_wall(&mut disp, prev_cursor, event);
             }
             Event::Key(Key::Char(' ')) => {
                 disp.toggle_wall_onoff();
@@ -81,6 +66,17 @@ fn main() -> Result<(), std::io::Error> {
     }
 
     Ok(())
+}
+
+fn handle_remove_wall(disp: &mut DispField, prev_cursor: (usize, usize), event: Event) {
+    let curr_cursor = disp.get_cursor();
+    match event {
+        Event::Key(Key::Char('H')) if prev_cursor.0 != curr_cursor.0 => disp.remove_right_wall(),
+        Event::Key(Key::Char('L')) if prev_cursor.0 != curr_cursor.0 => disp.remove_left_wall(),
+        Event::Key(Key::Char('K')) if prev_cursor.1 != curr_cursor.1 => disp.remove_down_wall(),
+        Event::Key(Key::Char('J')) if prev_cursor.1 != curr_cursor.1 => disp.remove_up_wall(),
+        _ => {}
+    }
 }
 
 fn draw<T: std::io::Write>(stdout: &mut RawTerminal<T>, disp_arr: &DispArray) -> Result<(), std::io::Error> {

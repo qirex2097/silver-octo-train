@@ -73,22 +73,22 @@ impl DispField {
     pub fn move_cursor_down_cell(&mut self) {
         self.cursor = cursor_down_cell(self.cursor);
     }
-    pub fn clear_right_wall(&mut self) {
-        if self.cursor.1 % 2 == 0 { return; }
-        self.disp_arr[self.cursor.1][self.cursor.0 + 1] = ' ';
-    }
 }
 
 impl DispField {
-    pub fn clear_left_wall(&mut self) {
+    pub fn remove_right_wall(&mut self) {
+        if self.cursor.1 % 2 == 0 { return; }
+        self.disp_arr[self.cursor.1][self.cursor.0 + 1] = ' ';
+    }
+    pub fn remove_left_wall(&mut self) {
         if self.cursor.1 % 2 == 0 { return; }
         self.disp_arr[self.cursor.1][self.cursor.0 - 1] = ' ';
     }
-    pub fn clear_up_wall(&mut self) {
+    pub fn remove_up_wall(&mut self) {
         if self.cursor.0 % 2 == 0 { return; }
         self.disp_arr[self.cursor.1 - 1][self.cursor.0] = ' ';
     }
-    pub fn clear_down_wall(&mut self) {
+    pub fn remove_down_wall(&mut self) {
         if self.cursor.0 % 2 == 0 { return; }
         self.disp_arr[self.cursor.1 + 1][self.cursor.0] = ' ';
     }
