@@ -13,8 +13,7 @@ fn main() -> Result<(), std::io::Error> {
     let mut stdout = stdout.into_raw_mode()?;
 
     write!(stdout, "{}{}", clear::All, cursor::BlinkingBlock)?;
-    draw(&mut stdout, &mut disp.disp_arr)?;
-    write!(stdout, "{}", cursor::Goto(disp.cursor.0 as u16 + 1, disp.cursor.1 as u16 + 1))?;
+    write!(stdout, "{}PUSH ANY KEY", cursor::Goto(1,1))?;
     stdout.flush()?;
 
     let stdin = stdin();
@@ -71,8 +70,9 @@ fn main() -> Result<(), std::io::Error> {
         }
 
         write!(stdout, "{}", clear::All)?;
-        draw(&mut stdout, &mut disp.disp_arr)?;
-        write!(stdout, "{}", cursor::Goto(disp.cursor.0 as u16 + 1, disp.cursor.1 as u16 + 1))?;
+        draw(&mut stdout, disp.get_disp_arr())?;
+        let (x, y) = disp.get_display_coords();
+        write!(stdout, "{}", cursor::Goto(x, y))?;
         stdout.flush()?;
     }
 

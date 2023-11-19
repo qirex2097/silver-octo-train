@@ -60,6 +60,9 @@ impl DispField {
         if self.cursor.1 % 2 == 0 { return; }
         self.disp_arr[self.cursor.1][self.cursor.0 + 1] = ' ';
     }
+}
+
+impl DispField {
     pub fn clear_left_wall(&mut self) {
         if self.cursor.1 % 2 == 0 { return; }
         self.disp_arr[self.cursor.1][self.cursor.0 - 1] = ' ';
@@ -83,44 +86,53 @@ impl DispField {
     }
 }
 
-pub fn get_cell_coords(cursor: (usize, usize)) -> (usize, usize) {
+impl DispField {
+    pub fn get_disp_arr(&self) -> &[[char; 19]; 19] {
+        &self.disp_arr
+    }
+    pub fn get_display_coords(&self) -> (u16, u16) {
+        (self.cursor.0 as u16 + 1, self.cursor.1 as u16 + 1)
+    }
+}
+
+fn get_cell_coords(cursor: (usize, usize)) -> (usize, usize) {
     (cursor.0.saturating_sub(1) / 2, cursor.1.saturating_sub(1) / 2)
 }
 fn get_cursor_from_cell_coords(cell_coords: (usize, usize)) -> (usize, usize) {
     (cell_coords.0 * 2 + 1, cell_coords.1 * 2 + 1)
 }
-pub fn cursor_left(cursor: (usize, usize)) -> (usize, usize) {
+fn cursor_left(cursor: (usize, usize)) -> (usize, usize) {
     (std::cmp::max(cursor.0 - 1, 1), cursor.1)
 }
-pub fn cursor_right(cursor: (usize, usize)) -> (usize, usize) {
+fn cursor_right(cursor: (usize, usize)) -> (usize, usize) {
     (std::cmp::min(cursor.0 + 1, 18 - 1), cursor.1)
 }
-pub fn cursor_up(cursor: (usize, usize)) -> (usize, usize) {
+fn cursor_up(cursor: (usize, usize)) -> (usize, usize) {
     (cursor.0, std::cmp::max(cursor.1 - 1, 1))
 }
-pub fn cursor_down(cursor: (usize, usize)) -> (usize, usize) {
+fn cursor_down(cursor: (usize, usize)) -> (usize, usize) {
     (cursor.0, std::cmp::min(cursor.1 + 1, 18 - 1))
 
 }
 
-pub fn cursor_left_cell(cursor: (usize, usize)) -> (usize, usize) {
+fn cursor_left_cell(cursor: (usize, usize)) -> (usize, usize) {
     let (cell_x, cell_y) = get_cell_coords(cursor);
     let cell_x = if cursor.0 % 2 == 1 { cell_x } else { cell_x + 1 };
     let (cursor_x, _) = get_cursor_from_cell_coords((cell_x.saturating_sub(1), cell_y));
     (cursor_x, cursor.1)
 }
-pub fn cursor_right_cell(cursor: (usize, usize)) -> (usize, usize) {
+fn cursor_right_cell(cursor: (usize, usize)) -> (usize, usize) {
     let (cell_x, cell_y) = get_cell_coords(cursor);
     let (cursor_x, _) = get_cursor_from_cell_coords((std::cmp::min(cell_x + 1, 8), cell_y));
     (cursor_x, cursor.1)
 }
-pub fn cursor_up_cell(cursor: (usize, usize)) -> (usize, usize) {
+fn cursor_up_cell(cursor: (usize, usize)) -> (usize, usize) {
     let (cell_x, cell_y) = get_cell_coords(cursor);
     let cell_y = if cursor.1 % 2 == 1 { cell_y } else { cell_y + 1 };
     let (_, cursor_y) = get_cursor_from_cell_coords((cell_x, cell_y.saturating_sub(1)));
     (cursor.0, cursor_y)
 }
-pub fn cursor_down_cell(cursor: (usize, usize)) -> (usize, usize) {
+fn cursor_down_cell(cursor: (usize, usize)) -> (usize, usize) {
     let (cell_x, cell_y) = get_cell_coords(cursor);
     let (_, cursor_y) = get_cursor_from_cell_coords((cell_x, std::cmp::min(cell_y + 1, 8)));
     (cursor.0, cursor_y)
