@@ -24,43 +24,43 @@ fn main() -> Result<(), std::io::Error> {
             Event::Key(Key::Ctrl('c')) | Event::Key(Key::Char('q')) => {
                 break;
             }
-            Event::Key(Key::Char('h')) => {
+            Event::Key(Key::Left) => {
                 disp.move_cursor_left();
             }
-            Event::Key(Key::Char('l')) => {
+            Event::Key(Key::Right) => {
                 disp.move_cursor_right();
             }
-            Event::Key(Key::Char('k')) => {
+            Event::Key(Key::Up) => {
                 disp.move_cursor_up();
             }
-            Event::Key(Key::Char('j')) => {
+            Event::Key(Key::Down) => {
                 disp.move_cursor_down();
             }
-            Event::Key(Key::Char('H')) => {
+            Event::Key(Key::Char('H')) | Event::Key(Key::Char('h'))=> {
                 let prev_cursor = disp.cursor;
                 disp.move_cursor_left_cell();
-                if prev_cursor.0 != disp.cursor.0 {
+                if prev_cursor.0 != disp.cursor.0 && event == Event::Key(Key::Char('H')) {
                     disp.clear_right_wall();
                 }
             }
-            Event::Key(Key::Char('L')) => {
+            Event::Key(Key::Char('L')) | Event::Key(Key::Char('l')) => {
                 let prev_cursor = disp.cursor;
                 disp.move_cursor_right_cell();
-                if prev_cursor.0 != disp.cursor.0 {
+                if prev_cursor.0 != disp.cursor.0 && event == Event::Key(Key::Char('L')) {
                     disp.clear_left_wall();
                 }
             }
-            Event::Key(Key::Char('K')) => {
+            Event::Key(Key::Char('K')) | Event::Key(Key::Char('k'))=> {
                 let prev_cursor = disp.cursor;
                 disp.move_cursor_up_cell();
-                if prev_cursor.1 != disp.cursor.1 {
+                if prev_cursor.1 != disp.cursor.1 && event == Event::Key(Key::Char('K')) {
                     disp.clear_down_wall();
                 }
             }
-            Event::Key(Key::Char('J')) => {
+            Event::Key(Key::Char('J')) | Event::Key(Key::Char('j'))=> {
                 let prev_cursor = disp.cursor;
                 disp.move_cursor_down_cell();
-                if prev_cursor.1 != disp.cursor.1 {
+                if prev_cursor.1 != disp.cursor.1 && event == Event::Key(Key::Char('J')) {
                     disp.clear_up_wall();
                 }
             }
