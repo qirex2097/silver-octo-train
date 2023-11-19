@@ -32,6 +32,18 @@ impl DispField {
 }
 
 impl DispField {
+    pub fn get_disp_arr(&self) -> &[[char; 19]; 19] {
+        &self.disp_arr
+    }
+    pub fn get_cursor(&self) -> (usize, usize) {
+        self.cursor
+    }
+    pub fn get_display_coords(&self) -> (u16, u16) {
+        (self.cursor.0 as u16 + 1, self.cursor.1 as u16 + 1)
+    }
+}
+
+impl DispField {
     pub fn move_cursor_left(&mut self) {
         self.cursor = cursor_left(self.cursor);
     }
@@ -83,15 +95,6 @@ impl DispField {
             (0, 1) => { if ch == ' '  { '|' } else { ' ' } }
             _ => { ch }
         };
-    }
-}
-
-impl DispField {
-    pub fn get_disp_arr(&self) -> &[[char; 19]; 19] {
-        &self.disp_arr
-    }
-    pub fn get_display_coords(&self) -> (u16, u16) {
-        (self.cursor.0 as u16 + 1, self.cursor.1 as u16 + 1)
     }
 }
 
