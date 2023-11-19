@@ -56,6 +56,31 @@ impl DispField {
     pub fn move_cursor_down_cell(&mut self) {
         self.cursor = cursor_down_cell(self.cursor);
     }
+    pub fn clear_right_wall(&mut self) {
+        if self.cursor.1 % 2 == 0 { return; }
+        self.disp_arr[self.cursor.1][self.cursor.0 + 1] = ' ';
+    }
+    pub fn clear_left_wall(&mut self) {
+        if self.cursor.1 % 2 == 0 { return; }
+        self.disp_arr[self.cursor.1][self.cursor.0 - 1] = ' ';
+    }
+    pub fn clear_up_wall(&mut self) {
+        if self.cursor.0 % 2 == 0 { return; }
+        self.disp_arr[self.cursor.1 - 1][self.cursor.0] = ' ';
+    }
+    pub fn clear_down_wall(&mut self) {
+        if self.cursor.0 % 2 == 0 { return; }
+        self.disp_arr[self.cursor.1 + 1][self.cursor.0] = ' ';
+    }
+    pub fn toggle_wall_onoff(&mut self) {
+        let (x, y) = self.cursor;
+        let ch = self.disp_arr[y][x];
+        self.disp_arr[y][x] = match (x % 2, y % 2) {
+            (1, 0) => { if ch == ' '  { '-' } else { ' ' } }
+            (0, 1) => { if ch == ' '  { '|' } else { ' ' } }
+            _ => { ch }
+        };
+    }
 }
 
 pub fn get_cell_coords(cursor: (usize, usize)) -> (usize, usize) {

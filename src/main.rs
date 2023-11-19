@@ -19,7 +19,6 @@ fn main() -> Result<(), std::io::Error> {
 
     let stdin = stdin();
     for event in stdin.events() {
-        let (prev_cursor_x, prev_cursor_y) = disp.cursor;
         let event = event?;
         match event {
             Event::Key(Key::Ctrl('c')) | Event::Key(Key::Char('q')) => {
@@ -38,41 +37,35 @@ fn main() -> Result<(), std::io::Error> {
                 disp.move_cursor_down();
             }
             Event::Key(Key::Char('H')) => {
+                let prev_cursor = disp.cursor;
                 disp.move_cursor_left_cell();
-//                disp.cursor = cursor_left_cell(disp.cursor);
-                let (cursor_x, cursor_y) = disp.cursor;
-                let disp_arr = &mut disp.disp_arr;
-                disp_arr[cursor_y][cursor_x + 1] = if cursor_y % 2 == 1 && prev_cursor_x != cursor_x { ' ' } else { disp_arr[cursor_y][cursor_x + 1] };
+                if prev_cursor.0 != disp.cursor.0 {
+                    disp.clear_right_wall();
+                }
             }
             Event::Key(Key::Char('L')) => {
+                let prev_cursor = disp.cursor;
                 disp.move_cursor_right_cell();
-//                disp.cursor = cursor_right_cell(disp.cursor);
-                let (cursor_x, cursor_y) = disp.cursor;
-                let disp_arr = &mut disp.disp_arr;
-                disp_arr[cursor_y][cursor_x - 1] = if cursor_y % 2 == 1 && prev_cursor_x != cursor_x { ' ' } else { disp_arr[cursor_y][cursor_x - 1] };
+                if prev_cursor.0 != disp.cursor.0 {
+                    disp.clear_left_wall();
+                }
             }
             Event::Key(Key::Char('K')) => {
+                let prev_cursor = disp.cursor;
                 disp.move_cursor_up_cell();
-//                disp.cursor = cursor_up_cell(disp.cursor);
-                let (cursor_x, cursor_y) = disp.cursor;
-                let disp_arr = &mut disp.disp_arr;
-                disp_arr[cursor_y + 1][cursor_x] = if cursor_x % 2 == 1 && prev_cursor_y != cursor_y { ' ' } else { disp_arr[cursor_y + 1][cursor_x] };
+                if prev_cursor.1 != disp.cursor.1 {
+                    disp.clear_down_wall();
+                }
             }
             Event::Key(Key::Char('J')) => {
+                let prev_cursor = disp.cursor;
                 disp.move_cursor_down_cell();
-//                disp.cursor = cursor_down_cell(disp.cursor);
-                let (cursor_x, cursor_y) = disp.cursor;
-                let disp_arr = &mut disp.disp_arr;
-                disp_arr[cursor_y - 1][cursor_x] = if cursor_x % 2 == 1 && prev_cursor_y != cursor_y { ' ' } else { disp_arr[cursor_y - 1][cursor_x] };
+                if prev_cursor.1 != disp.cursor.1 {
+                    disp.clear_up_wall();
+                }
             }
             Event::Key(Key::Char(' ')) => {
-                let (cursor_x, cursor_y) = disp.cursor;
-                let disp_arr = &mut disp.disp_arr;
-                match (cursor_x % 2, cursor_y % 2) {
-                    (1, 0) => { disp_arr[cursor_y][cursor_x] = if disp_arr[cursor_y][cursor_x] == ' '  { '-' } else { ' ' } }
-                    (0, 1) => { disp_arr[cursor_y][cursor_x] = if disp_arr[cursor_y][cursor_x] == ' '  { '|' } else { ' ' } }
-                    _ => {}
-                }
+                disp.toggle_wall_onoff();
             }
             _ => {}
         }
