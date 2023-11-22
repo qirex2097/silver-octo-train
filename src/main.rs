@@ -35,10 +35,11 @@ fn main() -> Result<(), std::io::Error> {
                 state = GameState::GameEdit;
 
                 write!(stdout, "{}", clear::All)?;
-                draw(&mut stdout, disp.get_disp_arr(), (1, 1))?;
-                let (x, y) = disp.get_display_coords();
-                write!(stdout, "{}", cursor::Goto(x, y))?;
-                stdout.flush()?;
+                let mut moji = String::from(format!("{}", clear::All));
+                moji.push_str(&get_board_moji(disp.get_disp_arr(), (1, 1)));
+                let (x, y) = get_display_coords(disp.get_cursor());
+                moji.push_str(&format!("{}", cursor::Goto(x, y)));
+                write!(stdout, "{}", moji)?;
             }
             GameState::GameEdit => {
                 match event {
@@ -84,9 +85,8 @@ fn main() -> Result<(), std::io::Error> {
 
                 write!(stdout, "{}", clear::All)?;
                 draw(&mut stdout, disp.get_disp_arr(), (1, 1))?;
-                let (x, y) = disp.get_display_coords();
+                let (x, y) = get_display_coords(disp.get_cursor());
                 write!(stdout, "{}", cursor::Goto(x, y))?;
-                stdout.flush()?;
             }
             GameState::GameSetValue => {
                 if event == Event::Key(Key::Char('q')) {
@@ -94,6 +94,7 @@ fn main() -> Result<(), std::io::Error> {
                 }
             }
         }
+        stdout.flush()?;
     }
 
     Ok(())
@@ -110,10 +111,23 @@ fn handle_remove_wall(disp: &mut DispField, prev_cursor: (usize, usize), event: 
     }
 }
 
+fn get_board_moji(disp_arr: &DispArray, base_position: (u16, u16)) -> String {
+    let mut moji: String = String::new();
+    for (y, line) in disp_arr.iter().enumerate() {
+        let line: String = line.iter().collect();
+        moji.push_str(&format!("{}{}", cursor::Goto(base_position.0, y as u16 + base_position.1), line));
+    }
+    moji
+}
+
 fn draw<T: std::io::Write>(stdout: &mut RawTerminal<T>, disp_arr: &DispArray, base_position: (u16, u16)) -> Result<(), std::io::Error> {
+    let moji = get_board_moji(&disp_arr, base_position);
+    write!(stdout, "{}", moji)?;
+    /*
     for (y, line) in disp_arr.iter().enumerate() {
         let line: String = line.iter().collect();
         write!(stdout, "{}{}", cursor::Goto(base_position.0, y as u16 + base_position.1), line)?;
     }
+     */
     Ok(())
 }

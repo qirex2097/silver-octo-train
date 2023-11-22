@@ -43,9 +43,6 @@ impl DispField {
     pub fn get_cursor(&self) -> (usize, usize) {
         self.cursor
     }
-    pub fn get_display_coords(&self) -> (u16, u16) {
-        (self.cursor.0 as u16 + 1, self.cursor.1 as u16 + 1)
-    }
 }
 
 impl DispField {
@@ -101,6 +98,10 @@ impl DispField {
             _ => { ch }
         };
     }
+}
+
+pub fn get_display_coords(cursor: (usize, usize)) -> (u16, u16) {
+    (cursor.0 as u16 + 1, cursor.1 as u16 + 1)
 }
 
 fn get_cell_coords(cursor: (usize, usize)) -> (usize, usize) {
