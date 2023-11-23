@@ -84,18 +84,22 @@ fn main() -> Result<(), std::io::Error> {
                 }
 
                 if key == Key::Char('v') {
+                    let v = disp.get_block_from_index(get_cell_index(cursor));
+                    let m = format!("{:?}", v);
+                    moji.push_str(&format!("{}{}", cursor::Goto(1, 20), m));
+                    cursor = (m.len(), 19);
                     state = GameState::GameSetValue;
-                    moji.push_str(&format!("{}({},{})", cursor::Goto(1, 20), prev_cursor.0, prev_cursor.1));
-                    cursor = (0, 19);
-
                 }
             }
             GameState::GameSetValue => {
+                let s: String = format!("{:?}", disp.get_block_from_index(get_cell_index(cursor)));
                 if key == Key::Char('q') {
-                    moji.push_str(&format!("{}           ", cursor::Goto(1, 20)));
+                    let s: String = std::iter::repeat(' ').take(s.len()).collect();
+                    moji.push_str(&format!("{}{}", cursor::Goto(1, 20), s));
                     state = GameState::GameEdit;
                 } else {
-                    moji.push_str(&format!("{}({},{})", cursor::Goto(1, 20), prev_cursor.0, prev_cursor.1));
+                    moji.push_str(&format!("{}{}", cursor::Goto(1, 20), s));
+                    cursor = (s.len(), 19);
                 }
             }
         }

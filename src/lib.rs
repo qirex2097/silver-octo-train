@@ -103,10 +103,65 @@ impl DispField {
     }
 }
 
+impl DispField {
+    pub fn get_block_from_index(&self, cell_index: usize) -> Vec<usize> {
+        let mut block: Vec<usize> = vec![cell_index];
+        let mut stack: Vec<usize> = vec![cell_index];
+        while let Some(curr) = stack.pop() {
+            let cursor = get_cursor_from_index(curr);
+            let left_cell = curr - 1;
+            if self.get_ch((cursor.0 - 1, cursor.1)) == ' ' && !block.contains(&left_cell) {
+                block.push(left_cell);
+                stack.push(left_cell);
+            }
+            let right_cell = curr + 1;
+            if self.get_ch((cursor.0 + 1, cursor.1)) == ' ' && !block.contains(&right_cell) {
+                block.push(right_cell);
+                stack.push(right_cell);
+            }
+            let up_cell = curr - 10;
+            if self.get_ch((cursor.0, cursor.1 - 1)) == ' ' && !block.contains(&up_cell) {
+                block.push(up_cell);
+                stack.push(up_cell);
+            }
+            let down_cell = curr + 10;
+            if self.get_ch((cursor.0, cursor.1 + 1)) == ' ' && !block.contains(&down_cell) {
+                block.push(down_cell);
+                stack.push(down_cell);
+            }
+        }
+        block
+    }
+}
+
+#[cfg(test)]
+mod test2 {
+    use super::*;
+    #[test]
+    fn test_get_block_from_index() {
+        let mut disp: DispField = DispField::new();
+        disp.disp_arr[1 + 1][1] = ' ';
+        disp.disp_arr[1][1 + 1] = ' ';
+        disp.disp_arr[3][1 + 1] = ' ';
+        let v = disp.get_block_from_index(11);
+        println!("{:?}", v);
+    }
+}
+
 pub fn get_display_coords(cursor: (usize, usize)) -> (u16, u16) {
     (cursor.0 as u16 + 1, cursor.1 as u16 + 1)
 }
-
+pub fn get_cell_index(cursor: (usize, usize)) -> usize {
+    let cell_position = get_cell_coords(cursor);
+    (cell_position.1 + 1) * 10 + cell_position.0 + 1
+}
+pub fn get_cursor_from_index(cell_index: usize) -> (usize, usize) {
+    let cell_position = get_cell_coords_from_index(cell_index);
+    get_cursor_from_cell_coords(cell_position)
+}
+pub fn get_cell_coords_from_index(cell_index: usize) -> (usize, usize) {
+    (cell_index % 10 - 1, cell_index / 10 - 1)
+}
 fn get_cell_coords(cursor: (usize, usize)) -> (usize, usize) {
     (cursor.0.saturating_sub(1) / 2, cursor.1.saturating_sub(1) / 2)
 }
@@ -142,6 +197,17 @@ fn cursor_down_cell(cursor: (usize, usize)) -> (usize, usize) {
 mod tests {
     use super::*;
 
+    #[test]
+    fn get_index_test() {
+        assert_eq!(get_cell_index((0, 0)), 11);
+        assert_eq!(get_cell_index((1, 1)), 11);
+        assert_eq!(get_cell_index((9, 9)), 55);
+        assert_eq!(get_cell_index((18, 18)), 99);
+        assert_eq!(get_cell_coords_from_index(11), (0, 0));
+        assert_eq!(get_cell_coords_from_index(99), (8, 8));
+        assert_eq!(get_cell_coords_from_index(55), (4, 4));
+        assert_eq!(get_cursor_from_index(11), (1, 1));
+    }
     #[test]
     fn cursor_move() {
         assert_eq!(cursor_left_cell((3, 3)), (1, 3));
