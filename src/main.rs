@@ -40,63 +40,54 @@ fn main() -> Result<(), std::io::Error> {
                 moji.push_str(&get_board_moji(disp.get_disp_arr(), (1, 1)));
             }
             GameState::GameEdit => {
+                if key == Key::Ctrl('c') || key == Key::Char('q') {
+                    break;
+                }
                 match key {
-                    Key::Ctrl('c') | Key::Char('q') => {
-                        break;
-                    }
                     Key::Left => {
                         disp.move_cursor_left();
-                        cursor = disp.get_cursor();
                     }
                     Key::Right => {
                         disp.move_cursor_right();
-                        cursor = disp.get_cursor();
                     }
                     Key::Up => {
                         disp.move_cursor_up();
-                        cursor = disp.get_cursor();
                     }
                     Key::Down => {
                         disp.move_cursor_down();
-                        cursor = disp.get_cursor();
                     }
                     Key::Char('H') | Key::Char('h')=> {
                         disp.move_cursor_left_cell();
-                        handle_remove_wall(&mut disp, prev_cursor, key);
-                        moji.push_str(&format!("{}", clear::All));
-                        moji.push_str(&get_board_moji(disp.get_disp_arr(), (1, 1)));
-                        cursor = disp.get_cursor();
                     }
                     Key::Char('L') | Key::Char('l') => {
                         disp.move_cursor_right_cell();
-                        handle_remove_wall(&mut disp, prev_cursor, key);
-                        moji.push_str(&format!("{}", clear::All));
-                        moji.push_str(&get_board_moji(disp.get_disp_arr(), (1, 1)));
-                        cursor = disp.get_cursor();
                     }
                     Key::Char('K') | Key::Char('k')=> {
                         disp.move_cursor_up_cell();
-                        handle_remove_wall(&mut disp, prev_cursor, key);
-                        moji.push_str(&format!("{}", clear::All));
-                        moji.push_str(&get_board_moji(disp.get_disp_arr(), (1, 1)));
-                        cursor = disp.get_cursor();
                     }
                     Key::Char('J') | Key::Char('j')=> {
                         disp.move_cursor_down_cell();
-                        handle_remove_wall(&mut disp, prev_cursor, key);
-                        moji.push_str(&format!("{}", clear::All));
-                        moji.push_str(&get_board_moji(disp.get_disp_arr(), (1, 1)));
-                        cursor = disp.get_cursor();
-                    }
-                    Key::Char(' ') => {
-                        disp.toggle_wall_onoff();
-                    }
-                    Key::Char('v') => {
-                        state = GameState::GameSetValue;
-                        moji.push_str(&format!("{}({},{})", cursor::Goto(1, 20), prev_cursor.0, prev_cursor.1));
-                        cursor = (0, 19);
                     }
                     _ => {}
+                }
+                cursor = disp.get_cursor();
+
+                if key == Key::Char('H') || key == Key::Char('L') || key == Key::Char('K') ||  key == Key::Char('J') {
+                    if let Some(m) = handle_remove_wall(&mut disp, prev_cursor, key) {
+                        moji.push_str(&m);
+                    }
+                } else if key == Key::Char(' ') {
+                    disp.toggle_wall_onoff();
+                    let ch = disp.get_ch(cursor);
+                    let disp_cursor = get_display_coords(cursor);
+                    moji.push_str(&format!("{}{}", cursor::Goto(disp_cursor.0, disp_cursor.1), ch));
+                }
+
+                if key == Key::Char('v') {
+                    state = GameState::GameSetValue;
+                    moji.push_str(&format!("{}({},{})", cursor::Goto(1, 20), prev_cursor.0, prev_cursor.1));
+                    cursor = (0, 19);
+
                 }
             }
             GameState::GameSetValue => {
@@ -117,15 +108,34 @@ fn main() -> Result<(), std::io::Error> {
     Ok(())
 }
 
-fn handle_remove_wall(disp: &mut DispField, prev_cursor: (usize, usize), key: termion::event::Key) {
+fn handle_remove_wall(disp: &mut DispField, prev_cursor: (usize, usize), key: termion::event::Key) -> Option<String> {
     let curr_cursor = disp.get_cursor();
+    let wall_cursor;
     match key {
-        Key::Char('H') if prev_cursor.0 != curr_cursor.0 => disp.remove_right_wall(),
-        Key::Char('L') if prev_cursor.0 != curr_cursor.0 => disp.remove_left_wall(),
-        Key::Char('K') if prev_cursor.1 != curr_cursor.1 => disp.remove_down_wall(),
-        Key::Char('J') if prev_cursor.1 != curr_cursor.1 => disp.remove_up_wall(),
-        _ => {}
+        Key::Char('H') if prev_cursor.0 != curr_cursor.0 => {
+            wall_cursor = (curr_cursor.0 + 1, curr_cursor.1);
+            disp.remove_right_wall();
+        },
+        Key::Char('L') if prev_cursor.0 != curr_cursor.0 => {
+            wall_cursor = (curr_cursor.0 - 1, curr_cursor.1);
+            disp.remove_left_wall();
+        },
+        Key::Char('K') if prev_cursor.1 != curr_cursor.1 => {
+            wall_cursor = (curr_cursor.0, curr_cursor.1 + 1);
+            disp.remove_down_wall();
+        },
+        Key::Char('J') if prev_cursor.1 != curr_cursor.1 => {
+            wall_cursor = (curr_cursor.0, curr_cursor.1 - 1);
+            disp.remove_up_wall();
+        },
+        _ => { return None; }
     }
+
+    let ch: char = disp.get_ch(wall_cursor);
+    let disp_cursor = get_display_coords(wall_cursor);
+    let moji = format!("{}{}", cursor::Goto(disp_cursor.0, disp_cursor.1), ch);
+
+    Some(moji)
 }
 
 fn get_board_moji(disp_arr: &DispArray, base_position: (u16, u16)) -> String {

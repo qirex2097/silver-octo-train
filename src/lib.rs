@@ -43,6 +43,9 @@ impl DispField {
     pub fn get_cursor(&self) -> (usize, usize) {
         self.cursor
     }
+    pub fn get_ch(&self, pos: (usize, usize)) -> char {
+        self.disp_arr[pos.1][pos.0]
+    }
 }
 
 impl DispField {
