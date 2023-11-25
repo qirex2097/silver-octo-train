@@ -78,9 +78,10 @@ fn main() -> Result<(), std::io::Error> {
                     }
                 } else if key == Key::Char(' ') {
                     disp.toggle_wall_onoff_cursor(cursor);
-                    let ch = disp.get_ch(cursor);
-                    let disp_cursor = get_display_coords(cursor);
-                    moji.push_str(&format!("{}{}", cursor::Goto(disp_cursor.0, disp_cursor.1), ch));
+                    if let Some(ch) = disp.get_ch(cursor) {
+                        let disp_cursor = get_display_coords(cursor);
+                        moji.push_str(&format!("{}{}", cursor::Goto(disp_cursor.0, disp_cursor.1), ch));
+                    }
                 }
 
                 if key == Key::Char('v') {
@@ -133,11 +134,13 @@ fn handle_remove_wall(disp: &mut DispField, prev_cursor: (usize, usize), key: te
     }
 
     disp.remove_wall_cursor(wall_cursor);
-    let ch: char = disp.get_ch(wall_cursor);
-    let disp_cursor = get_display_coords(wall_cursor);
-    let moji = format!("{}{}", cursor::Goto(disp_cursor.0, disp_cursor.1), ch);
-
-    Some(moji)
+    if let Some(ch) = disp.get_ch(wall_cursor) {
+        let disp_cursor = get_display_coords(wall_cursor);
+        let moji = format!("{}{}", cursor::Goto(disp_cursor.0, disp_cursor.1), ch);
+        Some(moji)
+    } else {
+        None
+    }
 }
 
 fn get_board_moji(disp_arr: &DispArray, base_position: (u16, u16)) -> String {

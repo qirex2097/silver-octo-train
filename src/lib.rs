@@ -43,8 +43,11 @@ impl DispField {
     pub fn get_cursor(&self) -> (usize, usize) {
         self.cursor
     }
-    pub fn get_ch(&self, pos: (usize, usize)) -> char {
-        self.disp_arr[pos.1][pos.0]
+    pub fn get_ch(&self, pos: (usize, usize)) -> Option<char> {
+        if pos.0 >= GRID_SIZE || pos.1 >= GRID_SIZE {
+            return None;
+        }
+        Some(self.disp_arr[pos.1][pos.0])
     }
 }
 
@@ -77,8 +80,8 @@ impl DispField {
 
 impl DispField {
     pub fn remove_wall_cursor(&mut self, cursor: (usize, usize)) {
-        if cursor.0 <= 0 || self.disp_arr[0].len() - 2 <= cursor.0 { return; }
-        if cursor.1 <= 0 || self.disp_arr.len() - 2 <= cursor.1 { return; }
+        if cursor.0 < CURSOR_MIN || CURSOR_MAX < cursor.0 { return; }
+        if cursor.1 < CURSOR_MIN || CURSOR_MAX < cursor.1 { return; }
         if cursor.0 % 2 == 0 && cursor.1 % 2 == 0 { return; }
         self.disp_arr[cursor.1][cursor.0] = ' ';
     }
@@ -100,33 +103,46 @@ impl DispField {
         while let Some(curr) = stack.pop() {
             if let Some(left_cell) = get_left_cell(curr) {
                 if !block.contains(&left_cell) {
-                    if self.get_left_wall(curr) == ' ' {
-                        block.push(left_cell);
-                        stack.push(left_cell);
+                    match self.get_left_wall(curr) {
+                        Some(ch) if ch == ' ' => {
+                            block.push(left_cell);
+                            stack.push(left_cell);
+
+                        }
+                        _ => {}
                     }
                 }
             }
             if let Some(right_cell) = get_right_cell(curr) {
                 if !block.contains(&right_cell) {
-                    if self.get_right_wall(curr) == ' ' {
-                        block.push(right_cell);
-                        stack.push(right_cell);
+                    match self.get_right_wall(curr) {
+                        Some(ch) if ch == ' ' => {
+                            block.push(right_cell);
+                            stack.push(right_cell);
+                        }
+                        _ => {}
                     }
                 }
             }
             if let Some(up_cell) = get_up_cell(curr) {
                 if !block.contains(&up_cell) {
-                    if self.get_up_wall(curr) == ' ' {
-                        block.push(up_cell);
-                        stack.push(up_cell);
+                    match self.get_up_wall(curr) {
+                        Some(ch) if ch == ' ' => {
+                            block.push(up_cell);
+                            stack.push(up_cell);
+                        }
+                        _ => {}
                     }
                 }
             }
             if let Some(down_cell) = get_down_cell(curr) {
                 if !block.contains(&down_cell) {
-                    if self.get_down_wall(curr) == ' ' {
-                        block.push(down_cell);
-                        stack.push(down_cell);
+                    match self.get_down_wall(curr) {
+                        Some(ch) if ch == ' ' => {
+                            block.push(down_cell);
+                            stack.push(down_cell);
+                        }
+                        _ => {}
                     }
                 }
             }
@@ -135,25 +151,25 @@ impl DispField {
         block
     }
     pub fn get_block_from_cursor(&self, cursor: (usize, usize)) -> Vec<usize> {
-        if self.get_ch(cursor) != ' ' {
-            return vec![];
+        match self.get_ch(cursor) {
+            Some(ch) if ch == ' ' => self.get_block_from_index(get_cell_index(cursor)),
+            _ => vec![]
         }
-        self.get_block_from_index(get_cell_index(cursor))
     }
 
-    fn get_left_wall(&self, cell_index: usize) -> char {
+    fn get_left_wall(&self, cell_index: usize) -> Option<char> {
         let cursor = get_cursor_from_index(cell_index);
         self.get_ch((cursor.0 - 1, cursor.1))
     }
-    fn get_right_wall(&self, cell_index: usize) -> char {
+    fn get_right_wall(&self, cell_index: usize) -> Option<char> {
         let cursor = get_cursor_from_index(cell_index);
         self.get_ch((cursor.0 + 1, cursor.1))
     }
-    fn get_up_wall(&self, cell_index: usize) -> char {
+    fn get_up_wall(&self, cell_index: usize) -> Option<char> {
         let cursor = get_cursor_from_index(cell_index);
         self.get_ch((cursor.0, cursor.1 - 1))
     }
-    fn get_down_wall(&self, cell_index: usize) -> char {
+    fn get_down_wall(&self, cell_index: usize) -> Option<char> {
         let cursor = get_cursor_from_index(cell_index);
         self.get_ch((cursor.0, cursor.1 + 1))
     }
