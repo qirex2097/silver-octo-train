@@ -76,24 +76,14 @@ impl DispField {
 }
 
 impl DispField {
-    pub fn remove_right_wall(&mut self) {
-        if self.cursor.1 % 2 == 0 { return; }
-        self.disp_arr[self.cursor.1][self.cursor.0 + 1] = ' ';
+    pub fn remove_wall_cursor(&mut self, cursor: (usize, usize)) {
+        if cursor.0 <= 0 || self.disp_arr[0].len() - 2 <= cursor.0 { return; }
+        if cursor.1 <= 0 || self.disp_arr.len() - 2 <= cursor.1 { return; }
+        if cursor.0 % 2 == 0 && cursor.1 % 2 == 0 { return; }
+        self.disp_arr[cursor.1][cursor.0] = ' ';
     }
-    pub fn remove_left_wall(&mut self) {
-        if self.cursor.1 % 2 == 0 { return; }
-        self.disp_arr[self.cursor.1][self.cursor.0 - 1] = ' ';
-    }
-    pub fn remove_up_wall(&mut self) {
-        if self.cursor.0 % 2 == 0 { return; }
-        self.disp_arr[self.cursor.1 - 1][self.cursor.0] = ' ';
-    }
-    pub fn remove_down_wall(&mut self) {
-        if self.cursor.0 % 2 == 0 { return; }
-        self.disp_arr[self.cursor.1 + 1][self.cursor.0] = ' ';
-    }
-    pub fn toggle_wall_onoff(&mut self) {
-        let (x, y) = self.cursor;
+    pub fn toggle_wall_onoff_cursor(&mut self, cursor: (usize, usize)) {
+        let (x, y) = cursor;
         let ch = self.disp_arr[y][x];
         self.disp_arr[y][x] = match (x % 2, y % 2) {
             (1, 0) => { if ch == ' '  { '-' } else { ' ' } }
@@ -108,31 +98,84 @@ impl DispField {
         let mut block: Vec<usize> = vec![cell_index];
         let mut stack: Vec<usize> = vec![cell_index];
         while let Some(curr) = stack.pop() {
-            let cursor = get_cursor_from_index(curr);
-            let left_cell = curr - 1;
-            if self.get_ch((cursor.0 - 1, cursor.1)) == ' ' && !block.contains(&left_cell) {
-                block.push(left_cell);
-                stack.push(left_cell);
+            if let Some(left_cell) = get_left_cell(curr) {
+                if !block.contains(&left_cell) {
+                    if self.get_left_wall(curr) == ' ' {
+                        block.push(left_cell);
+                        stack.push(left_cell);
+                    }
+                }
             }
-            let right_cell = curr + 1;
-            if self.get_ch((cursor.0 + 1, cursor.1)) == ' ' && !block.contains(&right_cell) {
-                block.push(right_cell);
-                stack.push(right_cell);
+            if let Some(right_cell) = get_right_cell(curr) {
+                if !block.contains(&right_cell) {
+                    if self.get_right_wall(curr) == ' ' {
+                        block.push(right_cell);
+                        stack.push(right_cell);
+                    }
+                }
             }
-            let up_cell = curr - 10;
-            if self.get_ch((cursor.0, cursor.1 - 1)) == ' ' && !block.contains(&up_cell) {
-                block.push(up_cell);
-                stack.push(up_cell);
+            if let Some(up_cell) = get_up_cell(curr) {
+                if !block.contains(&up_cell) {
+                    if self.get_up_wall(curr) == ' ' {
+                        block.push(up_cell);
+                        stack.push(up_cell);
+                    }
+                }
             }
-            let down_cell = curr + 10;
-            if self.get_ch((cursor.0, cursor.1 + 1)) == ' ' && !block.contains(&down_cell) {
-                block.push(down_cell);
-                stack.push(down_cell);
+            if let Some(down_cell) = get_down_cell(curr) {
+                if !block.contains(&down_cell) {
+                    if self.get_down_wall(curr) == ' ' {
+                        block.push(down_cell);
+                        stack.push(down_cell);
+                    }
+                }
             }
         }
+        block.sort();
         block
     }
+    pub fn get_block_from_cursor(&self, cursor: (usize, usize)) -> Vec<usize> {
+        if self.get_ch(cursor) != ' ' {
+            return vec![];
+        }
+        self.get_block_from_index(get_cell_index(cursor))
+    }
+
+    fn get_left_wall(&self, cell_index: usize) -> char {
+        let cursor = get_cursor_from_index(cell_index);
+        self.get_ch((cursor.0 - 1, cursor.1))
+    }
+    fn get_right_wall(&self, cell_index: usize) -> char {
+        let cursor = get_cursor_from_index(cell_index);
+        self.get_ch((cursor.0 + 1, cursor.1))
+    }
+    fn get_up_wall(&self, cell_index: usize) -> char {
+        let cursor = get_cursor_from_index(cell_index);
+        self.get_ch((cursor.0, cursor.1 - 1))
+    }
+    fn get_down_wall(&self, cell_index: usize) -> char {
+        let cursor = get_cursor_from_index(cell_index);
+        self.get_ch((cursor.0, cursor.1 + 1))
+    }
 }
+
+fn get_left_cell(cell_index: usize) -> Option<usize> {
+    if cell_index % 10 == 1 { return None; }
+    Some(cell_index - 1)
+}
+fn get_right_cell(cell_index: usize) -> Option<usize> {
+    if cell_index % 10 == 9 { return None; }
+    Some(cell_index + 1)
+}
+fn get_up_cell(cell_index: usize) -> Option<usize> {
+    if cell_index / 10 == 1 { return None; }
+    Some(cell_index - 10)
+}
+fn get_down_cell(cell_index: usize) -> Option<usize> {
+    if cell_index / 10 == 9 { return None; }
+    Some(cell_index + 10)
+}
+
 
 #[cfg(test)]
 mod test2 {
@@ -140,11 +183,23 @@ mod test2 {
     #[test]
     fn test_get_block_from_index() {
         let mut disp: DispField = DispField::new();
-        disp.disp_arr[1 + 1][1] = ' ';
-        disp.disp_arr[1][1 + 1] = ' ';
-        disp.disp_arr[3][1 + 1] = ' ';
         let v = disp.get_block_from_index(11);
-        println!("{:?}", v);
+        assert_eq!(v, [11]);
+        disp.remove_wall_cursor((1, 2));
+        disp.remove_wall_cursor((2, 1));
+        disp.remove_wall_cursor((2, 3));
+        let v = disp.get_block_from_index(11);
+        assert_eq!(v, [11, 12, 21, 22]);
+        let v = disp.get_block_from_cursor((2, 1));
+        assert_eq!(v, [11, 12, 21, 22]);
+        let v = disp.get_block_from_cursor((4, 1));
+        assert_eq!(v, []);
+        let v = disp.get_block_from_index(99);
+        assert_eq!(v, [99]);
+        let cursor = get_cursor_from_index(99);
+        disp.remove_wall_cursor((cursor.0, cursor.1 - 1));
+        let v = disp.get_block_from_index(99);
+        assert_eq!(v, [89,99]);
     }
 }
 
@@ -152,46 +207,44 @@ pub fn get_display_coords(cursor: (usize, usize)) -> (u16, u16) {
     (cursor.0 as u16 + 1, cursor.1 as u16 + 1)
 }
 pub fn get_cell_index(cursor: (usize, usize)) -> usize {
-    let cell_position = get_cell_coords(cursor);
-    (cell_position.1 + 1) * 10 + cell_position.0 + 1
+    let (cell_x, cell_y) = get_cell_coords(cursor);
+    cell_y * 10 + cell_x
 }
-pub fn get_cursor_from_index(cell_index: usize) -> (usize, usize) {
-    let cell_position = get_cell_coords_from_index(cell_index);
-    get_cursor_from_cell_coords(cell_position)
-}
-pub fn get_cell_coords_from_index(cell_index: usize) -> (usize, usize) {
-    (cell_index % 10 - 1, cell_index / 10 - 1)
+fn get_cell_coords_from_index(cell_index: usize) -> (usize, usize) {
+    (cell_index % 10, cell_index / 10)
 }
 fn get_cell_coords(cursor: (usize, usize)) -> (usize, usize) {
-    (cursor.0.saturating_sub(1) / 2, cursor.1.saturating_sub(1) / 2)
+    (cursor.0.saturating_sub(1) / 2 + 1, cursor.1.saturating_sub(1) / 2 + 1)
 }
 fn get_cursor_from_cell_coords(cell_coords: (usize, usize)) -> (usize, usize) {
-    (cell_coords.0 * 2 + 1, cell_coords.1 * 2 + 1)
+    ((cell_coords.0 - 1) * 2 + 1, (cell_coords.1 - 1) * 2 + 1)
+}
+pub fn get_cursor_from_index(cell_index: usize) -> (usize, usize) {
+    get_cursor_from_cell_coords(get_cell_coords_from_index(cell_index))
 }
 
 fn cursor_left_cell(cursor: (usize, usize)) -> (usize, usize) {
-    let (cell_x, cell_y) = get_cell_coords(cursor);
-    let cell_x = if cursor.0 % 2 == 1 { cell_x } else { cell_x + 1 };
-    let (cursor_x, _) = get_cursor_from_cell_coords((cell_x.saturating_sub(1), cell_y));
+    let (cell_x, cell_y) = get_cell_coords(cursor);// cursor = 4, 4, cell_x, y = 2, 2
+    let cell_x = if cursor.0 % 2 == 1 { cell_x } else { cell_x + 1 }; // cell_x = 3
+    let (cursor_x, _) = get_cursor_from_cell_coords((std::cmp::max(cell_x - 1, 1), cell_y));
     (cursor_x, cursor.1)
 }
 fn cursor_right_cell(cursor: (usize, usize)) -> (usize, usize) {
     let (cell_x, cell_y) = get_cell_coords(cursor);
-    let (cursor_x, _) = get_cursor_from_cell_coords((std::cmp::min(cell_x + 1, 8), cell_y));
+    let (cursor_x, _) = get_cursor_from_cell_coords((std::cmp::min(cell_x + 1, 9), cell_y));
     (cursor_x, cursor.1)
 }
 fn cursor_up_cell(cursor: (usize, usize)) -> (usize, usize) {
     let (cell_x, cell_y) = get_cell_coords(cursor);
-    let cell_y = if cursor.1 % 2 == 1 { cell_y } else { cell_y + 1 };
-    let (_, cursor_y) = get_cursor_from_cell_coords((cell_x, cell_y.saturating_sub(1)));
+    let cell_y = if cursor.1 % 2 == 1 { cell_y } else { cell_y + 1};
+    let (_, cursor_y) = get_cursor_from_cell_coords((cell_x, std::cmp::max(cell_y - 1, 1)));
     (cursor.0, cursor_y)
 }
 fn cursor_down_cell(cursor: (usize, usize)) -> (usize, usize) {
     let (cell_x, cell_y) = get_cell_coords(cursor);
-    let (_, cursor_y) = get_cursor_from_cell_coords((cell_x, std::cmp::min(cell_y + 1, 8)));
+    let (_, cursor_y) = get_cursor_from_cell_coords((cell_x, std::cmp::min(cell_y + 1, 9)));
     (cursor.0, cursor_y)
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -203,10 +256,12 @@ mod tests {
         assert_eq!(get_cell_index((1, 1)), 11);
         assert_eq!(get_cell_index((9, 9)), 55);
         assert_eq!(get_cell_index((18, 18)), 99);
-        assert_eq!(get_cell_coords_from_index(11), (0, 0));
-        assert_eq!(get_cell_coords_from_index(99), (8, 8));
-        assert_eq!(get_cell_coords_from_index(55), (4, 4));
+        assert_eq!(get_cell_coords_from_index(11), (1, 1));
+        assert_eq!(get_cell_coords_from_index(99), (9, 9));
+        assert_eq!(get_cell_coords_from_index(72), (2, 7));
         assert_eq!(get_cursor_from_index(11), (1, 1));
+        assert_eq!(get_cursor_from_index(12), (3, 1));
+        assert_eq!(get_cursor_from_index(37), (13, 5));
     }
     #[test]
     fn cursor_move() {
@@ -216,11 +271,13 @@ mod tests {
         assert_eq!(cursor_left_cell((4, 4)), (3, 4));
         assert_eq!(cursor_right_cell((1, 1)), (3, 1));
         assert_eq!(cursor_right_cell((2, 1)), (3, 1));
+        assert_eq!(cursor_right_cell((15, 2)), (17, 2));
         assert_eq!(cursor_right_cell((16, 1)), (17, 1));
         assert_eq!(cursor_right_cell((17, 1)), (17, 1));
         assert_eq!(cursor_up_cell((1, 1)), (1, 1));
         assert_eq!(cursor_up_cell((1, 2)), (1, 1));
         assert_eq!(cursor_up_cell((1, 3)), (1, 1));
+        assert_eq!(cursor_up_cell((4, 4)), (4, 3));
         assert_eq!(cursor_down_cell((1, 17)), (1, 17));
         assert_eq!(cursor_down_cell((1, 16)), (1, 17));
         assert_eq!(cursor_down_cell((1, 15)), (1, 17));
@@ -228,19 +285,19 @@ mod tests {
     }
     #[test]
     fn test_get_cell_coords() {
-        assert_eq!(get_cell_coords((1, 1)), (0, 0));
-        assert_eq!(get_cursor_from_cell_coords((0, 0)), (1, 1));
-        assert_eq!(get_cell_coords((2, 1)), (0, 0));
-        assert_eq!(get_cell_coords((3, 1)), (1, 0));
-        assert_eq!(get_cursor_from_cell_coords((1, 0)), (3, 1));
-        assert_eq!(get_cell_coords((3, 3)), (1, 1));
-        assert_eq!(get_cursor_from_cell_coords((1, 1)), (3, 3));
-        assert_eq!(get_cell_coords((7, 7)), (3, 3));
+        assert_eq!(get_cell_coords((1, 1)), (1, 1));
+        assert_eq!(get_cursor_from_cell_coords((1, 1)), (1, 1));
+        assert_eq!(get_cell_coords((2, 1)), (1, 1));
+        assert_eq!(get_cell_coords((3, 1)), (2, 1));
+        assert_eq!(get_cursor_from_cell_coords((2, 1)), (3, 1));
+        assert_eq!(get_cell_coords((3, 3)), (2, 2));
+        assert_eq!(get_cursor_from_cell_coords((2, 2)), (3, 3));
+        assert_eq!(get_cell_coords((7, 7)), (4, 4));
     }
     #[test]
     fn test_cursor_boundaries() {
         let mut disp: DispField = DispField::new();
-        assert_eq!(get_cell_coords(disp.cursor), (0, 0));
+        assert_eq!(get_cell_coords(disp.cursor), (1, 1));
         assert_eq!(disp.cursor, (1, 1));
         disp.move_cursor_left();
         assert_eq!(disp.cursor, (1, 1));

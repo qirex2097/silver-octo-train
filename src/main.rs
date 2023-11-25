@@ -77,14 +77,15 @@ fn main() -> Result<(), std::io::Error> {
                         moji.push_str(&m);
                     }
                 } else if key == Key::Char(' ') {
-                    disp.toggle_wall_onoff();
+                    disp.toggle_wall_onoff_cursor(cursor);
                     let ch = disp.get_ch(cursor);
                     let disp_cursor = get_display_coords(cursor);
                     moji.push_str(&format!("{}{}", cursor::Goto(disp_cursor.0, disp_cursor.1), ch));
                 }
 
                 if key == Key::Char('v') {
-                    let v = disp.get_block_from_index(get_cell_index(cursor));
+                    let v = disp.get_block_from_cursor(cursor);
+                    if v.len() == 0 { continue; }
                     let m = format!("{:?}", v);
                     moji.push_str(&format!("{}{}", cursor::Goto(1, 20), m));
                     cursor = (m.len(), 19);
@@ -92,7 +93,7 @@ fn main() -> Result<(), std::io::Error> {
                 }
             }
             GameState::GameSetValue => {
-                let s: String = format!("{:?}", disp.get_block_from_index(get_cell_index(cursor)));
+                let s: String = format!("{:?}", disp.get_block_from_cursor(cursor));
                 if key == Key::Char('q') {
                     let s: String = std::iter::repeat(' ').take(s.len()).collect();
                     moji.push_str(&format!("{}{}", cursor::Goto(1, 20), s));
@@ -118,23 +119,20 @@ fn handle_remove_wall(disp: &mut DispField, prev_cursor: (usize, usize), key: te
     match key {
         Key::Char('H') if prev_cursor.0 != curr_cursor.0 => {
             wall_cursor = (curr_cursor.0 + 1, curr_cursor.1);
-            disp.remove_right_wall();
         },
         Key::Char('L') if prev_cursor.0 != curr_cursor.0 => {
             wall_cursor = (curr_cursor.0 - 1, curr_cursor.1);
-            disp.remove_left_wall();
         },
         Key::Char('K') if prev_cursor.1 != curr_cursor.1 => {
             wall_cursor = (curr_cursor.0, curr_cursor.1 + 1);
-            disp.remove_down_wall();
         },
         Key::Char('J') if prev_cursor.1 != curr_cursor.1 => {
             wall_cursor = (curr_cursor.0, curr_cursor.1 - 1);
-            disp.remove_up_wall();
         },
         _ => { return None; }
     }
 
+    disp.remove_wall_cursor(wall_cursor);
     let ch: char = disp.get_ch(wall_cursor);
     let disp_cursor = get_display_coords(wall_cursor);
     let moji = format!("{}{}", cursor::Goto(disp_cursor.0, disp_cursor.1), ch);
