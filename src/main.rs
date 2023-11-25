@@ -1,13 +1,20 @@
 use std::io::{stdin, stdout, Write};
 use termion::{clear, cursor};
-use termion::{screen::IntoAlternateScreen, raw::IntoRawMode, raw::RawTerminal};
+use termion::{screen::IntoAlternateScreen, raw::IntoRawMode};
 use termion::event::{Event, Key};
 use termion::input::TermRead;
 
 use silver_octo_train::*;
 
+enum GameState {
+    GameInit,
+    GameEdit,
+    GameSetValue,
+}
+
 fn main() -> Result<(), std::io::Error> {
     let mut disp: DispField = DispField::new();
+    let mut state: GameState = GameState::GameInit;
 
     let stdout = stdout().into_alternate_screen()?;
     let mut stdout = stdout.into_raw_mode()?;
@@ -19,70 +26,128 @@ fn main() -> Result<(), std::io::Error> {
     let stdin = stdin();
     for event in stdin.events() {
         let prev_cursor = disp.get_cursor();
-        let event = event?;
-        match event {
-            Event::Key(Key::Ctrl('c')) | Event::Key(Key::Char('q')) => {
-                break;
-            }
-            Event::Key(Key::Left) => {
-                disp.move_cursor_left();
-            }
-            Event::Key(Key::Right) => {
-                disp.move_cursor_right();
-            }
-            Event::Key(Key::Up) => {
-                disp.move_cursor_up();
-            }
-            Event::Key(Key::Down) => {
-                disp.move_cursor_down();
-            }
-            Event::Key(Key::Char('H')) | Event::Key(Key::Char('h'))=> {
-                disp.move_cursor_left_cell();
-                handle_remove_wall(&mut disp, prev_cursor, event);
-            }
-            Event::Key(Key::Char('L')) | Event::Key(Key::Char('l')) => {
-                disp.move_cursor_right_cell();
-                handle_remove_wall(&mut disp, prev_cursor, event);
-            }
-            Event::Key(Key::Char('K')) | Event::Key(Key::Char('k'))=> {
-                disp.move_cursor_up_cell();
-                handle_remove_wall(&mut disp, prev_cursor, event);
-            }
-            Event::Key(Key::Char('J')) | Event::Key(Key::Char('j'))=> {
-                disp.move_cursor_down_cell();
-                handle_remove_wall(&mut disp, prev_cursor, event);
-            }
-            Event::Key(Key::Char(' ')) => {
-                disp.toggle_wall_onoff();
-            }
-            _ => {}
-        }
+        let mut cursor = disp.get_cursor();
+        let key = match event? {
+            Event::Key(key) => key,
+            _ => Key::Ctrl('c')
+        };
+        let mut moji: String = String::new();
+        match state {
+            GameState::GameInit => {
+                state = GameState::GameEdit;
 
-        write!(stdout, "{}", clear::All)?;
-        draw(&mut stdout, disp.get_disp_arr())?;
-        let (x, y) = disp.get_display_coords();
-        write!(stdout, "{}", cursor::Goto(x, y))?;
+                moji.push_str(&format!("{}", clear::All));
+                moji.push_str(&get_board_moji(disp.get_disp_arr(), (1, 1)));
+            }
+            GameState::GameEdit => {
+                if key == Key::Ctrl('c') || key == Key::Char('q') {
+                    break;
+                }
+                match key {
+                    Key::Left => {
+                        disp.move_cursor_left();
+                    }
+                    Key::Right => {
+                        disp.move_cursor_right();
+                    }
+                    Key::Up => {
+                        disp.move_cursor_up();
+                    }
+                    Key::Down => {
+                        disp.move_cursor_down();
+                    }
+                    Key::Char('H') | Key::Char('h')=> {
+                        disp.move_cursor_left_cell();
+                    }
+                    Key::Char('L') | Key::Char('l') => {
+                        disp.move_cursor_right_cell();
+                    }
+                    Key::Char('K') | Key::Char('k')=> {
+                        disp.move_cursor_up_cell();
+                    }
+                    Key::Char('J') | Key::Char('j')=> {
+                        disp.move_cursor_down_cell();
+                    }
+                    _ => {}
+                }
+                cursor = disp.get_cursor();
+
+                if key == Key::Char('H') || key == Key::Char('L') || key == Key::Char('K') ||  key == Key::Char('J') {
+                    if let Some(m) = handle_remove_wall(&mut disp, prev_cursor, key) {
+                        moji.push_str(&m);
+                    }
+                } else if key == Key::Char(' ') {
+                    disp.toggle_wall_onoff_cursor(cursor);
+                    if let Some(ch) = disp.get_ch(cursor) {
+                        let disp_cursor = get_display_coords(cursor);
+                        moji.push_str(&format!("{}{}", cursor::Goto(disp_cursor.0, disp_cursor.1), ch));
+                    }
+                }
+
+                if key == Key::Char('v') {
+                    let v = disp.get_block_from_cursor(cursor);
+                    if v.len() == 0 { continue; }
+                    let m = format!("{:?}", v);
+                    moji.push_str(&format!("{}{}", cursor::Goto(1, 20), m));
+                    cursor = (m.len(), 19);
+                    state = GameState::GameSetValue;
+                }
+            }
+            GameState::GameSetValue => {
+                let s: String = format!("{:?}", disp.get_block_from_cursor(cursor));
+                if key == Key::Char('q') {
+                    let s: String = std::iter::repeat(' ').take(s.len()).collect();
+                    moji.push_str(&format!("{}{}", cursor::Goto(1, 20), s));
+                    state = GameState::GameEdit;
+                } else {
+                    moji.push_str(&format!("{}{}", cursor::Goto(1, 20), s));
+                    cursor = (s.len(), 19);
+                }
+            }
+        }
+        write!(stdout, "{}", moji)?;
+        let (x, y) = get_display_coords(cursor);
+        write!(stdout, "{}", &format!("{}", cursor::Goto(x, y)))?;
         stdout.flush()?;
     }
 
     Ok(())
 }
 
-fn handle_remove_wall(disp: &mut DispField, prev_cursor: (usize, usize), event: Event) {
+fn handle_remove_wall(disp: &mut DispField, prev_cursor: (usize, usize), key: termion::event::Key) -> Option<String> {
     let curr_cursor = disp.get_cursor();
-    match event {
-        Event::Key(Key::Char('H')) if prev_cursor.0 != curr_cursor.0 => disp.remove_right_wall(),
-        Event::Key(Key::Char('L')) if prev_cursor.0 != curr_cursor.0 => disp.remove_left_wall(),
-        Event::Key(Key::Char('K')) if prev_cursor.1 != curr_cursor.1 => disp.remove_down_wall(),
-        Event::Key(Key::Char('J')) if prev_cursor.1 != curr_cursor.1 => disp.remove_up_wall(),
-        _ => {}
+    let wall_cursor;
+    match key {
+        Key::Char('H') if prev_cursor.0 != curr_cursor.0 => {
+            wall_cursor = (curr_cursor.0 + 1, curr_cursor.1);
+        },
+        Key::Char('L') if prev_cursor.0 != curr_cursor.0 => {
+            wall_cursor = (curr_cursor.0 - 1, curr_cursor.1);
+        },
+        Key::Char('K') if prev_cursor.1 != curr_cursor.1 => {
+            wall_cursor = (curr_cursor.0, curr_cursor.1 + 1);
+        },
+        Key::Char('J') if prev_cursor.1 != curr_cursor.1 => {
+            wall_cursor = (curr_cursor.0, curr_cursor.1 - 1);
+        },
+        _ => { return None; }
+    }
+
+    disp.remove_wall_cursor(wall_cursor);
+    if let Some(ch) = disp.get_ch(wall_cursor) {
+        let disp_cursor = get_display_coords(wall_cursor);
+        let moji = format!("{}{}", cursor::Goto(disp_cursor.0, disp_cursor.1), ch);
+        Some(moji)
+    } else {
+        None
     }
 }
 
-fn draw<T: std::io::Write>(stdout: &mut RawTerminal<T>, disp_arr: &DispArray) -> Result<(), std::io::Error> {
+fn get_board_moji(disp_arr: &DispArray, base_position: (u16, u16)) -> String {
+    let mut moji: String = String::new();
     for (y, line) in disp_arr.iter().enumerate() {
         let line: String = line.iter().collect();
-        write!(stdout, "{}{}", cursor::Goto(1, y as u16 + 1), line)?;
+        moji.push_str(&format!("{}{}", cursor::Goto(base_position.0, y as u16 + base_position.1), line));
     }
-    Ok(())
+    moji
 }
