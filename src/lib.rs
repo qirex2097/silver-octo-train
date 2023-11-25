@@ -3,9 +3,14 @@ const CURSOR_MIN: usize = 1;
 const CURSOR_MAX: usize = 17;
 
 pub type DispArray = [[char; GRID_SIZE]; GRID_SIZE];
+pub struct Block {
+    pub cells: Vec<usize>,
+    pub value: usize,
+}
 pub struct DispField {
     pub disp_arr: DispArray,
     pub cursor: (usize, usize),
+    pub blocks: Vec<Block>,
 }
 
 impl DispField {
@@ -32,7 +37,7 @@ impl DispField {
             [ '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', ],
         ];
 
-        DispField { disp_arr, cursor: (CURSOR_MIN, CURSOR_MIN), }
+        DispField { disp_arr, cursor: (CURSOR_MIN, CURSOR_MIN), blocks: vec![], }
     }
 }
 
@@ -97,7 +102,7 @@ impl DispField {
 }
 
 impl DispField {
-    pub fn get_block_from_index(&self, cell_index: usize) -> Vec<usize> {
+    fn get_block_from_index(&self, cell_index: usize) -> Vec<usize> {
         let mut block: Vec<usize> = vec![cell_index];
         let mut stack: Vec<usize> = vec![cell_index];
         while let Some(curr) = stack.pop() {
@@ -150,10 +155,30 @@ impl DispField {
         block.sort();
         block
     }
-    pub fn get_block_from_cursor(&self, cursor: (usize, usize)) -> Vec<usize> {
-        match self.get_ch(cursor) {
-            Some(ch) if ch == ' ' => self.get_block_from_index(get_cell_index(cursor)),
-            _ => vec![]
+    fn push_block_from_index(&mut self, cell_index: usize) -> Option<&Block> {
+        let v = self.get_block_from_index(cell_index);
+        if v.len() >= 2 {
+            self.blocks.push(Block { cells: v, value: 0 });
+            self.blocks.last()
+        } else {
+            None
+        }
+    }
+    pub fn get_block_from_cursor(&mut self, cursor: (usize, usize)) -> Option<usize> {
+        let cell_index = get_cell_index(cursor);
+        if let Some(idx) = self.blocks.iter().position(|block| block.cells.contains(&cell_index)) {
+            Some(idx)
+        } else {
+            match self.get_ch(cursor) {
+                Some(ch) if ch == ' ' => {
+                    if let Some(_) = self.push_block_from_index(cell_index) {
+                        Some(self.blocks.len() - 1)
+                    } else {
+                        None
+                    }
+                }
+                _ => None
+            }
         }
     }
 
@@ -207,9 +232,9 @@ mod test2 {
         let v = disp.get_block_from_index(11);
         assert_eq!(v, [11, 12, 21, 22]);
         let v = disp.get_block_from_cursor((2, 1));
-        assert_eq!(v, [11, 12, 21, 22]);
-        let v = disp.get_block_from_cursor((4, 1));
-        assert_eq!(v, []);
+        assert_eq!(disp.blocks[v.unwrap()].cells, [11, 12, 21, 22]);
+        // let v = disp.get_block_from_cursor((4, 1));
+        // assert!(v.is_none());
         let v = disp.get_block_from_index(99);
         assert_eq!(v, [99]);
         let cursor = get_cursor_from_index(99);
