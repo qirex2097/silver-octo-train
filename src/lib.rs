@@ -198,6 +198,13 @@ impl DispField {
         let cursor = get_cursor_from_index(cell_index);
         self.get_ch((cursor.0, cursor.1 + 1))
     }
+
+    pub fn set_block_value(&mut self, block_no: usize, value: usize) {
+        if self.blocks.len() <= block_no {
+            return;
+        }
+        self.blocks[block_no].value = value;
+    }
 }
 
 fn get_left_cell(cell_index: usize) -> Option<usize> {
