@@ -28,8 +28,6 @@ fn main() -> Result<(), std::io::Error> {
 
     let stdin = stdin();
     for event in stdin.events() {
-        let prev_cursor = disp.get_cursor();
-        let mut cursor = disp.get_cursor();
         let key = match event? {
             Event::Key(key) => key,
             _ => Key::Ctrl('c')
@@ -41,11 +39,14 @@ fn main() -> Result<(), std::io::Error> {
 
                 moji.push_str(&format!("{}", clear::All));
                 moji.push_str(&get_board_moji(disp.get_disp_arr(), (1, 1)));
+                let (x, y) = get_display_coords(disp.get_cursor());
+                moji.push_str(&format!("{}", cursor::Goto(x, y)));
             }
             GameState::GameEdit => {
                 if key == Key::Ctrl('c') || key == Key::Char('q') {
                     break;
                 }
+                let prev_cursor = disp.get_cursor();
                 match key {
                     Key::Left => {
                         disp.move_cursor_left();
@@ -73,7 +74,7 @@ fn main() -> Result<(), std::io::Error> {
                     }
                     _ => {}
                 }
-                cursor = disp.get_cursor();
+                let mut cursor = disp.get_cursor();
 
                 if key == Key::Char('H') || key == Key::Char('L') || key == Key::Char('K') ||  key == Key::Char('J') {
                     if let Some(m) = handle_remove_wall(&mut disp, prev_cursor, key) {
@@ -100,6 +101,8 @@ fn main() -> Result<(), std::io::Error> {
                         state = GameState::GameSetValue;
                     }
                 }
+                let (x, y) = get_display_coords(cursor);
+                moji.push_str(&format!("{}", cursor::Goto(x, y)));
             }
             GameState::GameSetValue => {
                 let block: &Block = &disp.blocks[block_no];
@@ -110,8 +113,7 @@ fn main() -> Result<(), std::io::Error> {
                     moji.push_str(&format!("{}", cursor::BlinkingBlock));
                     state = GameState::GameEdit;
                 } else {
-                    cursor.0 = 21 + block.cells.len() * 4;
-                    cursor.1 = block_no;
+                    let mut cursor = (21 + block.cells.len() * 4, block_no);
                     match key {
                         Key::Backspace if value > 0 => {
                             value /= 10;
@@ -132,12 +134,12 @@ fn main() -> Result<(), std::io::Error> {
                     let (x, y) = get_display_coords(cursor);
                     moji.push_str(&format!("{}{}{}", cursor::Goto(x, y), value.to_string(), clear::UntilNewline));
                     cursor.0 += if value != 0 { value.to_string().len() } else { 0 };
+                    let (x, y) = get_display_coords(cursor);
+                    moji.push_str(&format!("{}", cursor::Goto(x, y)));
                 }
             }
         }
         write!(stdout, "{}", moji)?;
-        let (x, y) = get_display_coords(cursor);
-        write!(stdout, "{}", &format!("{}", cursor::Goto(x, y)))?;
         stdout.flush()?;
     }
 
