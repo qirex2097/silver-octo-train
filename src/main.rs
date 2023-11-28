@@ -23,6 +23,9 @@ fn main() -> Result<(), std::io::Error> {
     write!(stdout, "{}PUSH ANY KEY", cursor::Goto(1,1))?;
     stdout.flush()?;
 
+    let mut block_no: usize = 0;
+    let mut value: usize = 0;
+
     let stdin = stdin();
     for event in stdin.events() {
         let prev_cursor = disp.get_cursor();
@@ -85,23 +88,50 @@ fn main() -> Result<(), std::io::Error> {
                 }
 
                 if key == Key::Char('v') {
-                    let v = disp.get_block_from_cursor(cursor);
-                    if v.len() == 0 { continue; }
-                    let m = format!("{:?}", v);
-                    moji.push_str(&format!("{}{}", cursor::Goto(1, 20), m));
-                    cursor = (m.len(), 19);
-                    state = GameState::GameSetValue;
+                    if let Some(pos) = disp.get_block_from_cursor(cursor) {
+                        block_no = pos;
+                        let block: &Block = &disp.blocks[block_no];
+                        value = block.value;
+                        cursor.0 = 21 + block.cells.len() * 4;
+                        cursor.1 = block_no;
+                        cursor.0 += if value != 0 { value.to_string().len() } else { 0 };
+                        moji.push_str(&get_blocks_moji(&disp, (21, 1)));
+                        moji.push_str(&format!("{}{}", cursor::Goto(21, block_no as u16 + 1), cursor::BlinkingUnderline));
+                        state = GameState::GameSetValue;
+                    }
                 }
             }
             GameState::GameSetValue => {
-                let s: String = format!("{:?}", disp.get_block_from_cursor(cursor));
-                if key == Key::Char('q') {
-                    let s: String = std::iter::repeat(' ').take(s.len()).collect();
-                    moji.push_str(&format!("{}{}", cursor::Goto(1, 20), s));
+                let block: &Block = &disp.blocks[block_no];
+                if key == Key::Char('q') || key == Key::Char('\n') {
+                    if key == Key::Char('\n') {
+                        disp.set_block_value(block_no, value);
+                    }
+                    moji.push_str(&format!("{}", cursor::BlinkingBlock));
                     state = GameState::GameEdit;
                 } else {
-                    moji.push_str(&format!("{}{}", cursor::Goto(1, 20), s));
-                    cursor = (s.len(), 19);
+                    cursor.0 = 21 + block.cells.len() * 4;
+                    cursor.1 = block_no;
+                    match key {
+                        Key::Backspace if value > 0 => {
+                            value /= 10;
+                        }
+                        Key::Char(c) => match c {
+                            '0'..='9' => {
+                                if value == 0 {
+                                    value = c as usize - '0' as usize;
+                                } else {
+                                    value *= 10;
+                                    value += c as usize - '0' as usize;
+                                }
+                            }
+                            _ => { }
+                        }
+                        _ => {}
+                    }
+                    let (x, y) = get_display_coords(cursor);
+                    moji.push_str(&format!("{}{}{}", cursor::Goto(x, y), value.to_string(), clear::UntilNewline));
+                    cursor.0 += if value != 0 { value.to_string().len() } else { 0 };
                 }
             }
         }
@@ -147,6 +177,15 @@ fn get_board_moji(disp_arr: &DispArray, base_position: (u16, u16)) -> String {
     let mut moji: String = String::new();
     for (y, line) in disp_arr.iter().enumerate() {
         let line: String = line.iter().collect();
+        moji.push_str(&format!("{}{}", cursor::Goto(base_position.0, y as u16 + base_position.1), line));
+    }
+    moji
+}
+
+fn get_blocks_moji(disp: &DispField, base_position: (u16, u16)) -> String {
+    let mut moji: String = String::new();
+    for (y, block) in disp.blocks.iter().enumerate() {
+        let line: String = format!("{:?} {}{}", block.cells, block.value, clear::UntilNewline);
         moji.push_str(&format!("{}{}", cursor::Goto(base_position.0, y as u16 + base_position.1), line));
     }
     moji
