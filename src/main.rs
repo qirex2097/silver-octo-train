@@ -1,9 +1,10 @@
 use std::io::{stdin, stdout, Write};
 use termion::{clear, cursor};
 use termion::{screen::IntoAlternateScreen, raw::IntoRawMode};
-use termion::event::{Event, Key};
-use termion::input::TermRead;
+use termion::event::Key;
 
+mod event;
+use crate::event::*;
 use silver_octo_train::*;
 
 enum GameState {
@@ -26,23 +27,23 @@ fn main() -> Result<(), std::io::Error> {
     let mut block_no: usize = 0;
     let mut value: usize = 0;
 
-    let stdin = stdin();
-    for event in stdin.events() {
-        let key = match event? {
-            Event::Key(key) => key,
-            _ => Key::Ctrl('c')
-        };
+    let rs = event_init(stdin());
+    loop {
+        let key_opt = event_wait(&rs);
         let mut moji: String = String::new();
         match state {
             GameState::GameInit => {
+                if let Some(_key) = key_opt {
                 state = GameState::GameEdit;
 
                 moji.push_str(&format!("{}", clear::All));
                 moji.push_str(&get_board_moji(disp.get_disp_arr(), (1, 1)));
                 let (x, y) = get_display_coords(disp.get_cursor());
                 moji.push_str(&format!("{}", cursor::Goto(x, y)));
+                }
             }
             GameState::GameEdit => {
+                if let Some(key) = key_opt {
                 if key == Key::Ctrl('c') || key == Key::Char('q') {
                     break;
                 }
@@ -103,14 +104,17 @@ fn main() -> Result<(), std::io::Error> {
                 }
                 let (x, y) = get_display_coords(cursor);
                 moji.push_str(&format!("{}", cursor::Goto(x, y)));
+                }
             }
             GameState::GameSetValue => {
                 let block: &Block = &disp.blocks[block_no];
+                if let Some(key) = key_opt {
                 if key == Key::Char('q') || key == Key::Char('\n') {
                     if key == Key::Char('\n') {
                         disp.set_block_value(block_no, value);
                     }
-                    moji.push_str(&format!("{}", cursor::BlinkingBlock));
+                    let (x, y) = get_display_coords(disp.get_cursor());
+                    moji.push_str(&format!("{}{}", cursor::BlinkingBlock, cursor::Goto(x, y)));
                     state = GameState::GameEdit;
                 } else {
                     let mut cursor = (21 + block.cells.len() * 4, block_no);
@@ -136,6 +140,7 @@ fn main() -> Result<(), std::io::Error> {
                     cursor.0 += if value != 0 { value.to_string().len() } else { 0 };
                     let (x, y) = get_display_coords(cursor);
                     moji.push_str(&format!("{}", cursor::Goto(x, y)));
+                }
                 }
             }
         }
