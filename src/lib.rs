@@ -54,6 +54,9 @@ impl DispField {
         }
         Some(self.disp_arr[pos.1][pos.0])
     }
+    pub fn set_cursor(&mut self, cursor: (usize, usize)) {
+        self.cursor = cursor;
+    }
 }
 
 impl DispField {
