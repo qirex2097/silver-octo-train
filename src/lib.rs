@@ -3,10 +3,12 @@ const CURSOR_MIN: usize = 1;
 const CURSOR_MAX: usize = 17;
 
 pub type DispArray = [[char; GRID_SIZE]; GRID_SIZE];
+#[derive(Clone)]
 pub struct Block {
     pub cells: Vec<usize>,
     pub value: usize,
 }
+#[derive(Clone)]
 pub struct DispField {
     pub disp_arr: DispArray,
     pub cursor: (usize, usize),

@@ -25,14 +25,15 @@ fn main() -> Result<(), std::io::Error> {
             break;
         }
         let next_state_opt = state.update(&mut data, key_opt);
-        let mut moji = state.draw(&data);
-        if let Some(next_state) = next_state_opt {
-            moji.push_str(&state.finalize());
-            state = next_state;
-            moji.push_str(&state.initialize(&mut data));
-        }
+        let moji = state.draw(&data);
         write!(stdout, "{}", moji)?;
         stdout.flush()?;
+
+        if let Some(next_state) = next_state_opt {
+            state.finalize();
+            state = next_state;
+            state.initialize(&mut data);
+        }
     }
 
     Ok(())

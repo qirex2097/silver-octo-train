@@ -34,7 +34,7 @@ pub fn event_wait(rx: &mpsc::Receiver<Event<Key>>) -> Option<Key> {
 fn timer_thread(tx: mpsc::Sender<Event<Key>>) {
     loop {
         tx.send(Event::Timer).unwrap();
-        thread::sleep(Duration::from_millis(100 * 10));
+        thread::sleep(Duration::from_millis(100 * 1));
     }
 }
 
