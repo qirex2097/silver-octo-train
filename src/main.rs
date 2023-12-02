@@ -26,11 +26,9 @@ fn main() -> Result<(), std::io::Error> {
             }
         }
         let next_state_opt = data.update(key_opt);
-        let moji = data.state.draw(&data.disp);
+        let mut moji = data.state.draw(&data.disp);
         if let Some(next_state) = next_state_opt {
-            data.state.finalize();
-            data.state = next_state;
-            data.state.initialize(&mut data.disp);
+            moji.push_str(&data.handle_state_change(next_state));
         }
         write!(stdout, "{}", moji)?;
         stdout.flush()?;

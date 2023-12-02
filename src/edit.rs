@@ -15,12 +15,19 @@ impl EditData {
     pub fn update(&mut self, key_opt: Option<Key>) -> Option<Box<dyn EditState>> {
         self.state.update(&mut self.disp, key_opt)
     }
+    pub fn handle_state_change(&mut self, next_state: Box<dyn EditState>) -> String {
+        let mut moji: String = String::new();
+        moji.push_str(&self.state.finalize());
+        self.state = next_state;
+        moji.push_str(&self.state.initialize(&mut self.disp));
+        moji
+    }
 }
 pub trait EditState {
-    fn initialize(&mut self, _disp: &mut DispField) {}
+    fn initialize(&mut self, _disp: &mut DispField) -> String { String::from("") }
     fn update(&mut self, _disp: &mut DispField, _key_opt: Option<Key>) -> Option<Box<dyn EditState>> { None }
     fn draw(&mut self, _disp: &DispField) -> String { String::from("") }
-    fn finalize(&mut self) {}
+    fn finalize(&mut self) -> String { String::from("") }
 }
 //----------------------------------------
 pub struct EditStateInit {
@@ -50,10 +57,17 @@ impl EditStateInit {
 }
 
 //----------------------------------------
-struct EditStateEdit;
+struct EditStateEdit {
+    is_redraw: bool,
+    moji: String,
+}
 impl EditState for EditStateEdit {
+    fn initialize(&mut self, disp: &mut DispField) -> String {
+        let cursor = get_display_coords(disp.get_cursor());
+        String::from(&format!("{}", cursor::Goto(cursor.0, cursor.1)))
+    }
     fn update(&mut self, disp: &mut DispField, key_opt: Option<Key>) -> Option<Box<dyn EditState>> {
-        let mut moji: String = String::from("");
+        self.moji = String::new();
         if let Some(key) = key_opt {
             let prev_cursor = disp.get_cursor();
             let mut cursor = disp.get_cursor();
@@ -88,13 +102,13 @@ impl EditState for EditStateEdit {
 
             if key == Key::Char('H') || key == Key::Char('L') || key == Key::Char('K') ||  key == Key::Char('J') {
                 if let Some(m) = handle_remove_wall(disp, prev_cursor, key) {
-                    moji.push_str(&m);
+                    self.moji.push_str(&m);
                 }
             } else if key == Key::Char(' ') {
                 disp.toggle_wall_onoff_cursor(cursor);
                 if let Some(ch) = disp.get_ch(cursor) {
                     let disp_cursor = get_display_coords(cursor);
-                    moji.push_str(&format!("{}{}", cursor::Goto(disp_cursor.0, disp_cursor.1), ch));
+                    self.moji.push_str(&format!("{}{}", cursor::Goto(disp_cursor.0, disp_cursor.1), ch));
                 }
             }
 
@@ -107,17 +121,18 @@ impl EditState for EditStateEdit {
         None
     }
     fn draw(&mut self, disp: &DispField) -> String {
-        let mut moji = String::from("");
-
-        moji.push_str(&get_board_moji(disp.get_disp_arr(), (1, 1)));
+        if self.is_redraw {
+            self.moji.push_str(&get_board_moji(disp.get_disp_arr(), (1, 1)));
+            self.is_redraw = false;
+        }
         let (x, y) = get_display_coords(disp.get_cursor());
-        moji.push_str(&format!("{}", cursor::Goto(x, y)));
-        moji
+        self.moji.push_str(&format!("{}", cursor::Goto(x, y)));
+        self.moji.clone()
     }
 }
 impl EditStateEdit {
     fn new() -> Self {
-        EditStateEdit { }
+        EditStateEdit { is_redraw: true, moji: String::new(), }
     }
 }
 //----------------------------------------
@@ -126,19 +141,20 @@ struct EditStateSetValue {
     value: usize,
 }
 impl EditState for EditStateSetValue {
-    fn initialize(&mut self, disp: &mut DispField) {
+    fn initialize(&mut self, disp: &mut DispField) -> String {
         let cursor = disp.get_cursor();
         if let Some(pos) = disp.get_block_from_cursor(cursor) {
+            let mut moji = String::new();
             self.block_no = pos;
             let block: &Block = &disp.blocks[self.block_no];
             self.value = block.value;
-            /*
-            cursor.0 = 21 + block.cells.len() * 4;
-            cursor.1 = block_no;
-            cursor.0 += if value != 0 { value.to_string().len() } else { 0 };
-            moji.push_str(&get_blocks_moji(&data.disp, (21, 1)));
-            moji.push_str(&format!("{}{}", cursor::Goto(21, block_no as u16 + 1), cursor::BlinkingUnderline));
-             */
+            let mut cursor: (usize, usize) = (21 + block.cells.len() * 4, self.block_no);
+            cursor.0 += if self.value != 0 { self.value.to_string().len() } else { 0 };
+            moji.push_str(&get_blocks_moji(&disp, (21, 1)));
+            moji.push_str(&format!("{}{}", cursor::Goto(21, self.block_no as u16 + 1), cursor::BlinkingUnderline));
+            moji
+        } else {
+            String::new()
         }
     }
     fn update(&mut self, disp: &mut DispField, key_opt: Option<Key>) -> Option<Box<dyn EditState>> {
@@ -147,10 +163,6 @@ impl EditState for EditStateSetValue {
                 if key == Key::Char('\n') {
                     disp.set_block_value(self.block_no, self.value);
                 }
-            /* カーソルを戻す
-                    let (x, y) = get_display_coords(data.disp.get_cursor());
-                    moji.push_str(&format!("{}{}", cursor::BlinkingBlock, cursor::Goto(x, y)));
-             */
                 return Some(Box::new(EditStateEdit::new()));
             }
         }
@@ -182,9 +194,6 @@ impl EditState for EditStateSetValue {
         let block: &Block = &disp.blocks[self.block_no];
         let mut cursor = (21 + block.cells.len() * 4, self.block_no);
 
-        moji.push_str(&get_blocks_moji(&disp, (21, 1)));
-        moji.push_str(&format!("{}SET VALUE{}", cursor::Goto(1,20), clear::UntilNewline));
-
         let (x, y) = get_display_coords(cursor);
         moji.push_str(&format!("{}{}{}", cursor::Goto(x, y), self.value.to_string(), clear::UntilNewline));
         cursor.0 += if self.value != 0 { self.value.to_string().len() } else { 0 };
@@ -192,6 +201,9 @@ impl EditState for EditStateSetValue {
         moji.push_str(&format!("{}", cursor::Goto(x, y)));
 
         moji
+    }
+    fn finalize(&mut self) -> String {
+        String::from(&format!("{}", cursor::BlinkingBlock))
     }
 }
 
