@@ -7,7 +7,6 @@ mod event;
 mod edit;
 use crate::event::*;
 use crate::edit::*;
-use silver_octo_train::*;
 
 fn main() -> Result<(), std::io::Error> {
     let stdout = stdout().into_alternate_screen()?;
@@ -16,7 +15,7 @@ fn main() -> Result<(), std::io::Error> {
     write!(stdout, "{}{}", clear::All, cursor::BlinkingBlock)?;
     stdout.flush()?;
 
-    let mut data: EditData = EditData { disp: DispField::new(), state: Box::new(EditStateInit::new()) };
+    let mut data: EditData = EditData::new();
 
     let rs = event_init(stdin());
     loop {
@@ -26,7 +25,7 @@ fn main() -> Result<(), std::io::Error> {
                 break;
             }
         }
-        let next_state_opt = data.state.update(&mut data.disp, key_opt);
+        let next_state_opt = data.update(key_opt);
         let moji = data.state.draw(&data.disp);
         if let Some(next_state) = next_state_opt {
             data.state.finalize();

@@ -7,6 +7,15 @@ pub struct EditData {
     pub disp: DispField,
     pub state: Box<dyn EditState>,
 }
+
+impl EditData {
+    pub fn new() -> Self {
+        EditData { disp: DispField::new(), state: Box::new(EditStateInit::new()), }
+    }
+    pub fn update(&mut self, key_opt: Option<Key>) -> Option<Box<dyn EditState>> {
+        self.state.update(&mut self.disp, key_opt)
+    }
+}
 pub trait EditState {
     fn initialize(&mut self, _disp: &mut DispField) {}
     fn update(&mut self, _disp: &mut DispField, _key_opt: Option<Key>) -> Option<Box<dyn EditState>> { None }
