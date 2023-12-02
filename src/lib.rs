@@ -3,10 +3,12 @@ const CURSOR_MIN: usize = 1;
 const CURSOR_MAX: usize = 17;
 
 pub type DispArray = [[char; GRID_SIZE]; GRID_SIZE];
+#[derive(Clone)]
 pub struct Block {
     pub cells: Vec<usize>,
     pub value: usize,
 }
+#[derive(Clone)]
 pub struct DispField {
     pub disp_arr: DispArray,
     pub cursor: (usize, usize),
@@ -54,32 +56,8 @@ impl DispField {
         }
         Some(self.disp_arr[pos.1][pos.0])
     }
-}
-
-impl DispField {
-    pub fn move_cursor_left(&mut self) {
-        self.cursor.0 = std::cmp::max(self.cursor.0 - 1, CURSOR_MIN);
-    }
-    pub fn move_cursor_right(&mut self) {
-        self.cursor.0 = std::cmp::min(self.cursor.0 + 1, CURSOR_MAX);
-    }
-    pub fn move_cursor_up(&mut self) {
-        self.cursor.1 = std::cmp::max(self.cursor.1 - 1, CURSOR_MIN);
-    }
-    pub fn move_cursor_down(&mut self) {
-        self.cursor.1 = std::cmp::min(self.cursor.1 + 1, CURSOR_MAX);
-    }
-    pub fn move_cursor_left_cell(&mut self) {
-        self.cursor = cursor_left_cell(self.cursor);
-    }
-    pub fn move_cursor_right_cell(&mut self) {
-        self.cursor = cursor_right_cell(self.cursor);
-    }
-    pub fn move_cursor_up_cell(&mut self) {
-        self.cursor = cursor_up_cell(self.cursor);
-    }
-    pub fn move_cursor_down_cell(&mut self) {
-        self.cursor = cursor_down_cell(self.cursor);
+    pub fn set_cursor(&mut self, cursor: (usize, usize)) {
+        self.cursor = cursor;
     }
 }
 
@@ -271,24 +249,37 @@ pub fn get_cursor_from_index(cell_index: usize) -> (usize, usize) {
     get_cursor_from_cell_coords(get_cell_coords_from_index(cell_index))
 }
 
-fn cursor_left_cell(cursor: (usize, usize)) -> (usize, usize) {
+
+pub fn cursor_left(cursor: (usize, usize)) -> (usize, usize) {
+    (std::cmp::max(cursor.0 - 1, CURSOR_MIN), cursor.1)
+}
+pub fn cursor_right(cursor: (usize, usize)) -> (usize, usize) {
+    (std::cmp::min(cursor.0 + 1, CURSOR_MAX), cursor.1)
+}
+pub fn cursor_up(cursor: (usize, usize)) -> (usize, usize) {
+    (cursor.0, std::cmp::max(cursor.1 - 1, CURSOR_MIN))
+}
+pub fn cursor_down(cursor: (usize, usize)) -> (usize, usize) {
+    (cursor.0, std::cmp::min(cursor.1 + 1, CURSOR_MAX))
+}
+pub fn cursor_left_cell(cursor: (usize, usize)) -> (usize, usize) {
     let (cell_x, cell_y) = get_cell_coords(cursor);// cursor = 4, 4, cell_x, y = 2, 2
     let cell_x = if cursor.0 % 2 == 1 { cell_x } else { cell_x + 1 }; // cell_x = 3
     let (cursor_x, _) = get_cursor_from_cell_coords((std::cmp::max(cell_x - 1, 1), cell_y));
     (cursor_x, cursor.1)
 }
-fn cursor_right_cell(cursor: (usize, usize)) -> (usize, usize) {
+pub fn cursor_right_cell(cursor: (usize, usize)) -> (usize, usize) {
     let (cell_x, cell_y) = get_cell_coords(cursor);
     let (cursor_x, _) = get_cursor_from_cell_coords((std::cmp::min(cell_x + 1, 9), cell_y));
     (cursor_x, cursor.1)
 }
-fn cursor_up_cell(cursor: (usize, usize)) -> (usize, usize) {
+pub fn cursor_up_cell(cursor: (usize, usize)) -> (usize, usize) {
     let (cell_x, cell_y) = get_cell_coords(cursor);
     let cell_y = if cursor.1 % 2 == 1 { cell_y } else { cell_y + 1};
     let (_, cursor_y) = get_cursor_from_cell_coords((cell_x, std::cmp::max(cell_y - 1, 1)));
     (cursor.0, cursor_y)
 }
-fn cursor_down_cell(cursor: (usize, usize)) -> (usize, usize) {
+pub fn cursor_down_cell(cursor: (usize, usize)) -> (usize, usize) {
     let (cell_x, cell_y) = get_cell_coords(cursor);
     let (_, cursor_y) = get_cursor_from_cell_coords((cell_x, std::cmp::min(cell_y + 1, 9)));
     (cursor.0, cursor_y)
@@ -341,23 +332,5 @@ mod tests {
         assert_eq!(get_cell_coords((3, 3)), (2, 2));
         assert_eq!(get_cursor_from_cell_coords((2, 2)), (3, 3));
         assert_eq!(get_cell_coords((7, 7)), (4, 4));
-    }
-    #[test]
-    fn test_cursor_boundaries() {
-        let mut disp: DispField = DispField::new();
-        assert_eq!(get_cell_coords(disp.cursor), (1, 1));
-        assert_eq!(disp.cursor, (1, 1));
-        disp.move_cursor_left();
-        assert_eq!(disp.cursor, (1, 1));
-        disp.move_cursor_right();
-        assert_eq!(disp.cursor, (2, 1));
-        disp.move_cursor_up();
-        assert_eq!(disp.cursor, (2, 1));
-        disp.move_cursor_down();
-        assert_eq!(disp.cursor, (2, 2));
-        disp.move_cursor_left();
-        assert_eq!(disp.cursor, (1, 2));
-        disp.move_cursor_up();
-        assert_eq!(disp.cursor, (1, 1));
     }
 }
