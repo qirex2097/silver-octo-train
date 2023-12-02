@@ -20,12 +20,13 @@ pub fn event_init(stdin: Stdin) -> mpsc::Receiver<Event<Key>> {
 }
 
 pub fn event_wait(rx: &mpsc::Receiver<Event<Key>>) -> Option<Key> {
-    match rx.recv().unwrap() {
-        Event::Timer => {
+    match rx.recv() {
+        Ok(event) => match event {
+            Event::Timer => None,
+            Event::Key(key) => Some(key),
+        },
+        Err(_e) => {
             None
-        }
-        Event::Key(key) => {
-            Some(key)
         }
     }
 }
@@ -41,7 +42,7 @@ fn key_thread(tx: mpsc::Sender<Event<Key>>, stdin: Stdin) {
     for event in stdin.events() {
         let key = match event.unwrap() {
             termion::event::Event::Key(key) => key,
-            _ => Key::Ctrl('c'),
+            _ => continue,
         };
         tx.send(Event::Key(key)).unwrap();
     }
