@@ -13,10 +13,10 @@ impl EditData {
     }
 }
 pub trait EditState {
-    fn initialize(&mut self, _disp: &mut DispField) -> String { String::from("") }
-    fn update(&mut self, _disp: &mut DispField, _key_opt: Option<Key>) -> Option<Box<dyn EditState>> { None }
-    fn draw(&mut self, _disp: &DispField) -> String { String::from("") }
-    fn finalize(&mut self) -> String { String::from("") }
+    fn initialize(&mut self, _data: &mut EditData) -> String { String::new() }
+    fn update(&mut self, _data: &mut EditData, _key_opt: Option<Key>) -> Option<Box<dyn EditState>> { None }
+    fn draw(&mut self, _data: &EditData) -> String { String::new() }
+    fn finalize(&mut self) -> String { String::new() }
 }
 
 pub fn edit_init() -> Box<dyn EditState> {
@@ -27,14 +27,14 @@ struct EditStateInit {
     is_displayed: bool,
 }
 impl EditState for EditStateInit {
-    fn update(&mut self, _disp: &mut DispField, key_opt: Option<Key>) -> Option<Box<dyn EditState>> {
+    fn update(&mut self, _data: &mut EditData, key_opt: Option<Key>) -> Option<Box<dyn EditState>> {
         if let Some(_key) = key_opt {
             Some(Box::new(EditStateEdit::new()))
         } else {
             None
         }
     }
-    fn draw(&mut self, _disp: &DispField) -> String {
+    fn draw(&mut self, _data: &EditData) -> String {
         let mut moji: String = String::new();
         if !self.is_displayed {
             self.is_displayed = true;
@@ -55,15 +55,15 @@ struct EditStateEdit {
     moji: String,
 }
 impl EditState for EditStateEdit {
-    fn initialize(&mut self, disp: &mut DispField) -> String {
-        let cursor = get_display_coords(disp.get_cursor());
+    fn initialize(&mut self, data: &mut EditData) -> String {
+        let cursor = get_display_coords(data.disp.get_cursor());
         String::from(&format!("{}", cursor::Goto(cursor.0, cursor.1)))
     }
-    fn update(&mut self, disp: &mut DispField, key_opt: Option<Key>) -> Option<Box<dyn EditState>> {
+    fn update(&mut self, data: &mut EditData, key_opt: Option<Key>) -> Option<Box<dyn EditState>> {
         self.moji = String::new();
         if let Some(key) = key_opt {
-            let prev_cursor = disp.get_cursor();
-            let mut cursor = disp.get_cursor();
+            let prev_cursor = data.disp.get_cursor();
+            let mut cursor = data.disp.get_cursor();
             match key {
                 Key::Left => {
                     cursor = cursor_left(cursor);
@@ -91,34 +91,34 @@ impl EditState for EditStateEdit {
                 }
                 _ => {}
             }
-            disp.set_cursor(cursor);
+            data.disp.set_cursor(cursor);
 
             if key == Key::Char('H') || key == Key::Char('L') || key == Key::Char('K') ||  key == Key::Char('J') {
-                if let Some(m) = handle_remove_wall(disp, prev_cursor, key) {
+                if let Some(m) = handle_remove_wall(&mut data.disp, prev_cursor, key) {
                     self.moji.push_str(&m);
                 }
             } else if key == Key::Char(' ') {
-                disp.toggle_wall_onoff_cursor(cursor);
-                if let Some(ch) = disp.get_ch(cursor) {
+                data.disp.toggle_wall_onoff_cursor(cursor);
+                if let Some(ch) = data.disp.get_ch(cursor) {
                     let disp_cursor = get_display_coords(cursor);
                     self.moji.push_str(&format!("{}{}", cursor::Goto(disp_cursor.0, disp_cursor.1), ch));
                 }
             }
 
             if key == Key::Char('v') {
-                if let Some(_pos) = disp.get_block_from_cursor(cursor) {
+                if let Some(_pos) = data.disp.get_block_from_cursor(cursor) {
                     return Some(Box::new(EditStateSetValue::new()))
                 }
             }
         }
         None
     }
-    fn draw(&mut self, disp: &DispField) -> String {
+    fn draw(&mut self, data: &EditData) -> String {
         if self.is_redraw {
-            self.moji.push_str(&get_board_moji(disp.get_disp_arr(), (1, 1)));
+            self.moji.push_str(&get_board_moji(data.disp.get_disp_arr(), (1, 1)));
             self.is_redraw = false;
         }
-        let (x, y) = get_display_coords(disp.get_cursor());
+        let (x, y) = get_display_coords(data.disp.get_cursor());
         self.moji.push_str(&format!("{}", cursor::Goto(x, y)));
         self.moji.clone()
     }
@@ -134,27 +134,27 @@ struct EditStateSetValue {
     value: usize,
 }
 impl EditState for EditStateSetValue {
-    fn initialize(&mut self, disp: &mut DispField) -> String {
-        let cursor = disp.get_cursor();
-        if let Some(pos) = disp.get_block_from_cursor(cursor) {
+    fn initialize(&mut self, data: &mut EditData) -> String {
+        let cursor = data.disp.get_cursor();
+        if let Some(pos) = data.disp.get_block_from_cursor(cursor) {
             let mut moji = String::new();
             self.block_no = pos;
-            let block: &Block = &disp.blocks[self.block_no];
+            let block: &Block = &data.disp.blocks[self.block_no];
             self.value = block.value;
             let mut cursor: (usize, usize) = (21 + block.cells.len() * 4, self.block_no);
             cursor.0 += if self.value != 0 { self.value.to_string().len() } else { 0 };
-            moji.push_str(&get_blocks_moji(&disp, (21, 1)));
+            moji.push_str(&get_blocks_moji(&data.disp, (21, 1)));
             moji.push_str(&format!("{}{}", cursor::Goto(21, self.block_no as u16 + 1), cursor::BlinkingUnderline));
             moji
         } else {
             String::new()
         }
     }
-    fn update(&mut self, disp: &mut DispField, key_opt: Option<Key>) -> Option<Box<dyn EditState>> {
+    fn update(&mut self, data: &mut EditData, key_opt: Option<Key>) -> Option<Box<dyn EditState>> {
         if let Some(key) = key_opt {
             if key == Key::Char('q') || key == Key::Char('\n') {
                 if key == Key::Char('\n') {
-                    disp.set_block_value(self.block_no, self.value);
+                    data.disp.set_block_value(self.block_no, self.value);
                 }
                 return Some(Box::new(EditStateEdit::new()));
             }
@@ -182,9 +182,9 @@ impl EditState for EditStateSetValue {
 
         None
     }
-    fn draw(&mut self, disp: &DispField) -> String {
+    fn draw(&mut self, data: &EditData) -> String {
         let mut moji: String = String::new();
-        let block: &Block = &disp.blocks[self.block_no];
+        let block: &Block = &data.disp.blocks[self.block_no];
         let mut cursor = (21 + block.cells.len() * 4, self.block_no);
 
         let (x, y) = get_display_coords(cursor);
