@@ -19,8 +19,8 @@ pub trait EditState {
     fn finalize(&mut self)  {}
 }
 
-pub fn edit_init() -> Box<dyn EditState> {
-    Box::new(EditStateInit::new())
+pub fn edit_init() -> (Box<dyn EditState>, EditData) {
+    (Box::new(EditStateInit::new()), EditData::new())
 }
 //----------------------------------------
 struct EditStateInit {

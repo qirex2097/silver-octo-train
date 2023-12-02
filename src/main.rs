@@ -15,8 +15,7 @@ fn main() -> Result<(), std::io::Error> {
     write!(stdout, "{}{}", clear::All, cursor::BlinkingBlock)?;
     stdout.flush()?;
 
-    let mut data: EditData = EditData::new();
-    let mut state: Box<dyn EditState> = edit_init();
+    let (mut state, mut data) = edit_init();
 
     let rs = event_init(stdin());
     loop {
