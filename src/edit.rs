@@ -5,22 +5,11 @@ use silver_octo_train::*;
 
 pub struct EditData {
     pub disp: DispField,
-    pub state: Box<dyn EditState>,
 }
 
 impl EditData {
     pub fn new() -> Self {
-        EditData { disp: DispField::new(), state: Box::new(EditStateInit::new()), }
-    }
-    pub fn update(&mut self, key_opt: Option<Key>) -> Option<Box<dyn EditState>> {
-        self.state.update(&mut self.disp, key_opt)
-    }
-    pub fn handle_state_change(&mut self, next_state: Box<dyn EditState>) -> String {
-        let mut moji: String = String::new();
-        moji.push_str(&self.state.finalize());
-        self.state = next_state;
-        moji.push_str(&self.state.initialize(&mut self.disp));
-        moji
+        EditData { disp: DispField::new(), }
     }
 }
 pub trait EditState {
@@ -29,8 +18,12 @@ pub trait EditState {
     fn draw(&mut self, _disp: &DispField) -> String { String::from("") }
     fn finalize(&mut self) -> String { String::from("") }
 }
+
+pub fn edit_init() -> Box<dyn EditState> {
+    Box::new(EditStateInit::new())
+}
 //----------------------------------------
-pub struct EditStateInit {
+struct EditStateInit {
     is_displayed: bool,
 }
 impl EditState for EditStateInit {

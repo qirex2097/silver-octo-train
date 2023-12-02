@@ -16,19 +16,20 @@ fn main() -> Result<(), std::io::Error> {
     stdout.flush()?;
 
     let mut data: EditData = EditData::new();
+    let mut state: Box<dyn EditState> = edit_init();
 
     let rs = event_init(stdin());
     loop {
         let key_opt = event_wait(&rs);
-        if let Some(key) = key_opt {
-            if key == Key::Ctrl('c') {
-                break;
-            }
+        if let Some(Key::Ctrl('c')) = key_opt {
+            break;
         }
-        let next_state_opt = data.update(key_opt);
-        let mut moji = data.state.draw(&data.disp);
+        let next_state_opt = state.update(&mut data.disp, key_opt);
+        let mut moji = state.draw(&data.disp);
         if let Some(next_state) = next_state_opt {
-            moji.push_str(&data.handle_state_change(next_state));
+            moji.push_str(&state.finalize());
+            state = next_state;
+            moji.push_str(&state.initialize(&mut data.disp));
         }
         write!(stdout, "{}", moji)?;
         stdout.flush()?;
