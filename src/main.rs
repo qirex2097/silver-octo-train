@@ -33,6 +33,10 @@ fn main() -> Result<(), std::io::Error> {
             state = next_state;
             state.initialize(&mut data);
         }
+
+        if state.is_terminal() {
+            break;
+        }
     }
 
     Ok(())

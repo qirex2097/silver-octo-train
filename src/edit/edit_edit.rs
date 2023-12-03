@@ -56,10 +56,15 @@ impl EditState for EditStateEdit {
             } else if key == Key::Char(' ') {
                 self.new_disp = toggle_wall_onoff_cursor(&data.disp, cursor);
             }
+
             if key == Key::Char('v') {
                 if let Some(_pos) = data.disp.get_block_from_cursor(cursor) {
                     return Some(Box::new(EditStateSetValue::new()))
                 }
+            }
+
+            if key == Key::Char('q') {
+                return Some(Box::new(EditStateTerminal));
             }
         }
         None
@@ -118,4 +123,9 @@ fn get_board_moji(disp_arr: &DispArray, base_position: (u16, u16)) -> String {
         moji.push_str(&format!("{}{}", cursor::Goto(base_position.0, y as u16 + base_position.1), line));
     }
     moji
+}
+
+pub struct EditStateTerminal;
+impl EditState for EditStateTerminal {
+    fn is_terminal(&self) -> bool { true }
 }
