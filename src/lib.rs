@@ -1,6 +1,6 @@
-const GRID_SIZE: usize = 19;
-const CURSOR_MIN: usize = 1;
-const CURSOR_MAX: usize = 17;
+pub const GRID_SIZE: usize = 19;
+pub const CURSOR_MIN: usize = 1;
+pub const CURSOR_MAX: usize = 17;
 
 pub type DispArray = [[char; GRID_SIZE]; GRID_SIZE];
 #[derive(Clone)]

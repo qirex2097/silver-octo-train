@@ -51,6 +51,7 @@ impl EditState for EditStateEdit {
             }
             data.disp.set_cursor(cursor);
 
+
             if key == Key::Char('H') || key == Key::Char('L') || key == Key::Char('K') ||  key == Key::Char('J') {
                 self.new_disp = handle_remove_wall(&data.disp, prev_cursor, key);
             } else if key == Key::Char(' ') {
@@ -63,6 +64,9 @@ impl EditState for EditStateEdit {
                 }
             }
 
+            if key == Key::Char('r') {
+                self.is_redraw = true;
+            }
             if key == Key::Char('q') {
                 return Some(Box::new(EditStateTerminal));
             }
@@ -121,6 +125,17 @@ fn get_board_moji(disp_arr: &DispArray, base_position: (u16, u16)) -> String {
     for (y, line) in disp_arr.iter().enumerate() {
         let line: String = line.iter().collect();
         moji.push_str(&format!("{}{}", cursor::Goto(base_position.0, y as u16 + base_position.1), line));
+        for (x, ch) in line.chars().enumerate() {
+            let _index = get_cell_index((x, y));
+            let ch_color = "\x1b[46m";
+            let ch_default = "\x1b[49m";
+            if ch == ' ' && (disp_arr[y][x + 1] == ' ' || disp_arr[y + 1][x] == ' ' || disp_arr[y][x - 1] == ' ' || disp_arr[y - 1][x] == ' ') {
+                moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0, y as u16 + base_position.1), ch_color, ch_default));
+            } else if ch == '+' && CURSOR_MIN <= x && x <= CURSOR_MAX && CURSOR_MIN <= y && y <= CURSOR_MAX &&
+                (disp_arr[y][x - 1] == ' ' && disp_arr[y][x + 1] == ' ' && disp_arr[y - 1][x] == ' ' && disp_arr[y + 1][x] == ' ') {
+                moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0, y as u16 + base_position.1), ch_color, ch_default));
+            }
+        }
     }
     moji
 }
