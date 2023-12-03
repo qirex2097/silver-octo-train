@@ -10,18 +10,19 @@ use silver_octo_train::*;
 
 pub struct EditData {
     pub disp: DispField,
+    pub cursor: (usize, usize),
 }
 
 impl EditData {
     pub fn new() -> Self {
-        EditData { disp: DispField::new(), }
+        EditData { disp: DispField::new(), cursor: (CURSOR_MIN, CURSOR_MIN) }
     }
 }
 pub trait EditState {
     fn initialize(&mut self, _data: &mut EditData) {}
     fn update(&mut self, _data: &mut EditData, _key_opt: Option<Key>) -> Option<Box<dyn EditState>> { None }
     fn draw(&mut self, _data: &mut EditData) -> String { String::new() }
-    fn finalize(&mut self)  {}
+    fn finalize(&mut self, _data: &mut EditData)  {}
     fn is_terminal(&self) -> bool { false }
 }
 

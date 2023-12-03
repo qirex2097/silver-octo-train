@@ -29,7 +29,7 @@ fn main() -> Result<(), std::io::Error> {
         stdout.flush()?;
 
         if let Some(next_state) = next_state_opt {
-            state.finalize();
+            state.finalize(&mut data);
             state = next_state;
             state.initialize(&mut data);
         }

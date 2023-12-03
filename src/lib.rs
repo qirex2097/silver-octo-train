@@ -11,7 +11,6 @@ pub struct Block {
 #[derive(Clone)]
 pub struct DispField {
     pub disp_arr: DispArray,
-    pub cursor: (usize, usize),
     pub blocks: Vec<Block>,
 }
 
@@ -39,7 +38,7 @@ impl DispField {
             [ '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', ],
         ];
 
-        DispField { disp_arr, cursor: (CURSOR_MIN, CURSOR_MIN), blocks: vec![], }
+        DispField { disp_arr, blocks: vec![], }
     }
 }
 
@@ -47,17 +46,11 @@ impl DispField {
     pub fn get_disp_arr(&self) -> &[[char; GRID_SIZE]; GRID_SIZE] {
         &self.disp_arr
     }
-    pub fn get_cursor(&self) -> (usize, usize) {
-        self.cursor
-    }
     pub fn get_ch(&self, pos: (usize, usize)) -> Option<char> {
         if pos.0 >= GRID_SIZE || pos.1 >= GRID_SIZE {
             return None;
         }
         Some(self.disp_arr[pos.1][pos.0])
-    }
-    pub fn set_cursor(&mut self, cursor: (usize, usize)) {
-        self.cursor = cursor;
     }
 }
 

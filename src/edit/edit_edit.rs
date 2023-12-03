@@ -5,21 +5,22 @@ use crate::edit::*;
 pub struct EditStateEdit {
     is_redraw: bool,
     new_disp: Option<DispField>,
-    _cursor: (usize, usize),
+    cursor: (usize, usize),
 }
 impl EditStateEdit {
     pub fn new() -> Self {
-        EditStateEdit { is_redraw: true, new_disp: None, _cursor: (0, 0), }
+        EditStateEdit { is_redraw: true, new_disp: None, cursor: (0, 0), }
     }
 }
 impl EditState for EditStateEdit {
-    fn initialize(&mut self, _data: &mut EditData) {
+    fn initialize(&mut self, data: &mut EditData) {
         self.is_redraw = true;
+        self.cursor = data.cursor;
     }
     fn update(&mut self, data: &mut EditData, key_opt: Option<Key>) -> Option<Box<dyn EditState>> {
         if let Some(key) = key_opt {
-            let prev_cursor = data.disp.get_cursor();
-            let mut cursor = data.disp.get_cursor();
+            let prev_cursor = self.cursor;
+            let mut cursor = self.cursor;
             match key {
                 Key::Left => {
                     cursor = cursor_left(cursor);
@@ -47,10 +48,10 @@ impl EditState for EditStateEdit {
                 }
                 _ => {}
             }
-            data.disp.set_cursor(cursor);
+            self.cursor = cursor;
 
             if key == Key::Char('H') || key == Key::Char('L') || key == Key::Char('K') ||  key == Key::Char('J') {
-                self.new_disp = handle_remove_wall(&data.disp, prev_cursor, key);
+                self.new_disp = handle_remove_wall(&data.disp, cursor, prev_cursor, key);
             } else if key == Key::Char(' ') {
                 self.new_disp = toggle_wall_onoff_cursor(&data.disp, cursor);
             }
@@ -73,9 +74,8 @@ impl EditState for EditStateEdit {
     }
     fn draw(&mut self, data: &mut EditData) -> String {
         let mut moji: String = String::new();
-        if self.new_disp.is_some() {
-            self.new_disp.as_mut().map(|disp| data.disp = disp.clone());
-            self.new_disp = None;
+        if let Some(disp) = self.new_disp.take() {
+            data.disp = disp;
             self.is_redraw = true;
         }
         if self.is_redraw {
@@ -84,16 +84,18 @@ impl EditState for EditStateEdit {
             moji.push_str(&format!("{}", cursor::BlinkingBlock));
             self.is_redraw = false;
         }
-        let (x, y) = get_display_coords(data.disp.get_cursor());
+        let (x, y) = get_display_coords(self.cursor);
         moji.push_str(&format!("{}", cursor::Goto(x, y)));
         moji
     }
+    fn finalize(&mut self, data: &mut EditData) {
+        data.cursor = self.cursor;
+    }
 }
 
-fn handle_remove_wall(prev_disp: &DispField, prev_cursor: (usize, usize), key: termion::event::Key) -> Option<DispField> {
+fn handle_remove_wall(prev_disp: &DispField, curr_cursor: (usize, usize), prev_cursor: (usize, usize), key: termion::event::Key) -> Option<DispField> {
     let mut disp = prev_disp.clone();
 
-    let curr_cursor = disp.get_cursor();
     let wall_cursor;
     match key {
         Key::Char('H') if prev_cursor.0 != curr_cursor.0 => {
