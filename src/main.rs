@@ -6,7 +6,7 @@ use termion::event::Key;
 mod event;
 mod edit;
 use crate::event::*;
-use crate::edit::*;
+use crate::edit::edit_init;
 
 fn main() -> Result<(), std::io::Error> {
     let stdout = stdout().into_alternate_screen()?;
