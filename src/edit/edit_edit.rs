@@ -2,6 +2,9 @@ use termion::event::Key;
 use termion::cursor;
 use crate::edit::*;
 
+const CH_COLOR: &str = "\x1b[46m";
+const CH_DEFAULT: &str = "\x1b[49m";
+
 pub struct EditStateEdit {
     is_redraw: bool,
     new_disp: Option<DispField>,
@@ -136,18 +139,16 @@ fn get_cell_color(disp: &DispField, base_position: (u16, u16)) -> String {
     let mut moji = String::new();
     for block in disp.blocks.iter() {
         for &cell_index in block.cells.iter() {
-            let ch_color = "\x1b[46m";
-            let ch_default = "\x1b[49m";
             let (x, y) = get_cursor_from_index(cell_index);
-            moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0, y as u16 + base_position.1), ch_color, ch_default));
+            moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0, y as u16 + base_position.1), CH_COLOR, CH_DEFAULT));
             if block.cells.contains(&(cell_index + 1)) {
-                moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0 + 1, y as u16 + base_position.1), ch_color, ch_default));
+                moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0 + 1, y as u16 + base_position.1), CH_COLOR, CH_DEFAULT));
             }
             if block.cells.contains(&(cell_index + 10)) {
-                moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0, y as u16 + base_position.1 + 1), ch_color, ch_default));
+                moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0, y as u16 + base_position.1 + 1), CH_COLOR, CH_DEFAULT));
             }
             if block.cells.contains(&(cell_index + 1)) && block.cells.contains(&(cell_index + 10)) && block.cells.contains(&(cell_index + 11)) {
-                moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0 + 1, y as u16 + base_position.1 + 1), ch_color, ch_default));
+                moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0 + 1, y as u16 + base_position.1 + 1), CH_COLOR, CH_DEFAULT));
             }
         }
     }

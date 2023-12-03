@@ -3,9 +3,9 @@ use termion::event::Key;
 pub mod edit_edit;
 pub mod edit_init;
 pub mod edit_value;
-use crate::edit::edit_edit::*;
-use crate::edit::edit_init::*;
-use crate::edit::edit_value::*;
+use crate::edit::edit_edit::EditStateEdit;
+use crate::edit::edit_init::EditStateInit;
+use crate::edit::edit_value::EditStateSetValue;
 use silver_octo_train::*;
 
 pub struct EditData {
