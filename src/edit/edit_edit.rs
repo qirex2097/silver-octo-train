@@ -17,8 +17,6 @@ impl EditState for EditStateEdit {
         self.is_redraw = true;
     }
     fn update(&mut self, data: &mut EditData, key_opt: Option<Key>) -> Option<Box<dyn EditState>> {
-        self.new_disp.as_mut().map(|disp| data.disp = disp.clone());
-        self.new_disp = None;
         if let Some(key) = key_opt {
             let prev_cursor = data.disp.get_cursor();
             let mut cursor = data.disp.get_cursor();
@@ -51,14 +49,13 @@ impl EditState for EditStateEdit {
             }
             data.disp.set_cursor(cursor);
 
-
             if key == Key::Char('H') || key == Key::Char('L') || key == Key::Char('K') ||  key == Key::Char('J') {
                 self.new_disp = handle_remove_wall(&data.disp, prev_cursor, key);
             } else if key == Key::Char(' ') {
                 self.new_disp = toggle_wall_onoff_cursor(&data.disp, cursor);
             }
 
-            if key == Key::Char('v') {
+            if key == Key::Char('v') || key == Key::Char('\n') {
                 if let Some(_pos) = data.disp.get_block_from_cursor(cursor) {
                     self.is_redraw = true;
                     return Some(Box::new(EditStateSetValue::new()))
@@ -74,13 +71,14 @@ impl EditState for EditStateEdit {
         }
         None
     }
-    fn draw(&mut self, data: &EditData) -> String {
+    fn draw(&mut self, data: &mut EditData) -> String {
         let mut moji: String = String::new();
         if self.new_disp.is_some() {
-            let disp = self.new_disp.as_mut().unwrap();
-            moji.push_str(&get_board_moji(disp.get_disp_arr(), (1, 1)));
-            moji.push_str(&get_cell_color(&disp, (1, 1)));
-        } else if self.is_redraw {
+            self.new_disp.as_mut().map(|disp| data.disp = disp.clone());
+            self.new_disp = None;
+            self.is_redraw = true;
+        }
+        if self.is_redraw {
             moji.push_str(&get_board_moji(data.disp.get_disp_arr(), (1, 1)));
             moji.push_str(&get_cell_color(&data.disp, (1, 1)));
             moji.push_str(&format!("{}", cursor::BlinkingBlock));

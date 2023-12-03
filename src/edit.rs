@@ -20,7 +20,7 @@ impl EditData {
 pub trait EditState {
     fn initialize(&mut self, _data: &mut EditData) {}
     fn update(&mut self, _data: &mut EditData, _key_opt: Option<Key>) -> Option<Box<dyn EditState>> { None }
-    fn draw(&mut self, _data: &EditData) -> String { String::new() }
+    fn draw(&mut self, _data: &mut EditData) -> String { String::new() }
     fn finalize(&mut self)  {}
     fn is_terminal(&self) -> bool { false }
 }

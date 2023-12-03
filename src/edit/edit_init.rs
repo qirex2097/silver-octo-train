@@ -18,7 +18,7 @@ impl EditState for EditStateInit {
             None
         }
     }
-    fn draw(&mut self, _data: &EditData) -> String {
+    fn draw(&mut self, _data: &mut EditData) -> String {
         let mut moji: String = String::new();
         if !self.is_displayed {
             self.is_displayed = true;

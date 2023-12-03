@@ -24,9 +24,6 @@ impl EditState for EditStateSetValue {
         }
     }
     fn update(&mut self, data: &mut EditData, key_opt: Option<Key>) -> Option<Box<dyn EditState>> {
-        if self.value != self.new_value {
-            self.value = self.new_value;
-        }
         if let Some(key) = key_opt {
             if key == Key::Char('q') || key == Key::Char('\n') {
                 if key == Key::Char('\n') {
@@ -60,7 +57,7 @@ impl EditState for EditStateSetValue {
 
         None
     }
-    fn draw(&mut self, data: &EditData) -> String {
+    fn draw(&mut self, data: &mut EditData) -> String {
         let mut moji: String = String::new();
         let block: &Block = &data.disp.blocks[self.block_no];
         let mut cursor: (usize, usize) = (21 + block.cells.len() * 4, self.block_no);
@@ -72,11 +69,12 @@ impl EditState for EditStateSetValue {
         }
 
         if self.new_value != self.value {
+            self.value = self.new_value;
             let (x, y) = get_display_coords(cursor);
-            moji.push_str(&format!("{}{}{}", cursor::Goto(x, y), self.new_value.to_string(), clear::UntilNewline));
+            moji.push_str(&format!("{}{}{}", cursor::Goto(x, y), self.value.to_string(), clear::UntilNewline));
         }
 
-        cursor.0 += if self.new_value != 0 { self.new_value.to_string().len() } else { 0 };
+        cursor.0 += if self.value != 0 { self.value.to_string().len() } else { 0 };
         let (x, y) = get_display_coords(cursor);
         moji.push_str(&format!("{}", cursor::Goto(x, y)));
 

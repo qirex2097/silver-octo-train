@@ -24,7 +24,7 @@ fn main() -> Result<(), std::io::Error> {
             break;
         }
         let next_state_opt = state.update(&mut data, key_opt);
-        let moji = state.draw(&data);
+        let moji = state.draw(&mut data);
         write!(stdout, "{}", moji)?;
         stdout.flush()?;
 
