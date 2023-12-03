@@ -60,6 +60,7 @@ impl EditState for EditStateEdit {
 
             if key == Key::Char('v') {
                 if let Some(_pos) = data.disp.get_block_from_cursor(cursor) {
+                    self.is_redraw = true;
                     return Some(Box::new(EditStateSetValue::new()))
                 }
             }
@@ -78,8 +79,10 @@ impl EditState for EditStateEdit {
         if self.new_disp.is_some() {
             let disp = self.new_disp.as_mut().unwrap();
             moji.push_str(&get_board_moji(disp.get_disp_arr(), (1, 1)));
+            moji.push_str(&get_cell_color(&disp, (1, 1)));
         } else if self.is_redraw {
             moji.push_str(&get_board_moji(data.disp.get_disp_arr(), (1, 1)));
+            moji.push_str(&get_cell_color(&data.disp, (1, 1)));
             moji.push_str(&format!("{}", cursor::BlinkingBlock));
             self.is_redraw = false;
         }
@@ -125,15 +128,26 @@ fn get_board_moji(disp_arr: &DispArray, base_position: (u16, u16)) -> String {
     for (y, line) in disp_arr.iter().enumerate() {
         let line: String = line.iter().collect();
         moji.push_str(&format!("{}{}", cursor::Goto(base_position.0, y as u16 + base_position.1), line));
-        for (x, ch) in line.chars().enumerate() {
-            let _index = get_cell_index((x, y));
+    }
+    moji
+}
+
+fn get_cell_color(disp: &DispField, base_position: (u16, u16)) -> String {
+    let mut moji = String::new();
+    for block in disp.blocks.iter() {
+        for &cell_index in block.cells.iter() {
             let ch_color = "\x1b[46m";
             let ch_default = "\x1b[49m";
-            if ch == ' ' && (disp_arr[y][x + 1] == ' ' || disp_arr[y + 1][x] == ' ' || disp_arr[y][x - 1] == ' ' || disp_arr[y - 1][x] == ' ') {
-                moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0, y as u16 + base_position.1), ch_color, ch_default));
-            } else if ch == '+' && CURSOR_MIN <= x && x <= CURSOR_MAX && CURSOR_MIN <= y && y <= CURSOR_MAX &&
-                (disp_arr[y][x - 1] == ' ' && disp_arr[y][x + 1] == ' ' && disp_arr[y - 1][x] == ' ' && disp_arr[y + 1][x] == ' ') {
-                moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0, y as u16 + base_position.1), ch_color, ch_default));
+            let (x, y) = get_cursor_from_index(cell_index);
+            moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0, y as u16 + base_position.1), ch_color, ch_default));
+            if block.cells.contains(&(cell_index + 1)) {
+                moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0 + 1, y as u16 + base_position.1), ch_color, ch_default));
+            }
+            if block.cells.contains(&(cell_index + 10)) {
+                moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0, y as u16 + base_position.1 + 1), ch_color, ch_default));
+            }
+            if block.cells.contains(&(cell_index + 1)) && block.cells.contains(&(cell_index + 10)) && block.cells.contains(&(cell_index + 11)) {
+                moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0 + 1, y as u16 + base_position.1 + 1), ch_color, ch_default));
             }
         }
     }
