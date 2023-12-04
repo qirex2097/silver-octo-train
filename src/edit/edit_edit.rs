@@ -159,3 +159,99 @@ pub struct EditStateTerminal;
 impl EditState for EditStateTerminal {
     fn is_terminal(&self) -> bool { true }
 }
+
+
+fn cursor_left(cursor: (usize, usize)) -> (usize, usize) {
+    (std::cmp::max(cursor.0 - 1, CURSOR_MIN), cursor.1)
+}
+fn cursor_right(cursor: (usize, usize)) -> (usize, usize) {
+    (std::cmp::min(cursor.0 + 1, CURSOR_MAX), cursor.1)
+}
+fn cursor_up(cursor: (usize, usize)) -> (usize, usize) {
+    (cursor.0, std::cmp::max(cursor.1 - 1, CURSOR_MIN))
+}
+fn cursor_down(cursor: (usize, usize)) -> (usize, usize) {
+    (cursor.0, std::cmp::min(cursor.1 + 1, CURSOR_MAX))
+}
+fn cursor_left_cell(cursor: (usize, usize)) -> (usize, usize) {
+    let (cell_x, cell_y) = get_cell_coords(cursor);// cursor = 4, 4, cell_x, y = 2, 2
+    let cell_x = if cursor.0 % 2 == 1 { cell_x } else { cell_x + 1 }; // cell_x = 3
+    let (cursor_x, _) = get_cursor_from_cell_coords((std::cmp::max(cell_x - 1, 1), cell_y));
+    (cursor_x, cursor.1)
+}
+fn cursor_right_cell(cursor: (usize, usize)) -> (usize, usize) {
+    let (cell_x, cell_y) = get_cell_coords(cursor);
+    let (cursor_x, _) = get_cursor_from_cell_coords((std::cmp::min(cell_x + 1, 9), cell_y));
+    (cursor_x, cursor.1)
+}
+fn cursor_up_cell(cursor: (usize, usize)) -> (usize, usize) {
+    let (cell_x, cell_y) = get_cell_coords(cursor);
+    let cell_y = if cursor.1 % 2 == 1 { cell_y } else { cell_y + 1};
+    let (_, cursor_y) = get_cursor_from_cell_coords((cell_x, std::cmp::max(cell_y - 1, 1)));
+    (cursor.0, cursor_y)
+}
+fn cursor_down_cell(cursor: (usize, usize)) -> (usize, usize) {
+    let (cell_x, cell_y) = get_cell_coords(cursor);
+    let (_, cursor_y) = get_cursor_from_cell_coords((cell_x, std::cmp::min(cell_y + 1, 9)));
+    (cursor.0, cursor_y)
+}
+
+fn get_cell_coords_from_index(cell_index: usize) -> (usize, usize) {
+    (cell_index % 10, cell_index / 10)
+}
+fn get_cell_coords(cursor: (usize, usize)) -> (usize, usize) {
+    (cursor.0.saturating_sub(1) / 2 + 1, cursor.1.saturating_sub(1) / 2 + 1)
+}
+fn get_cursor_from_cell_coords(cell_coords: (usize, usize)) -> (usize, usize) {
+    ((cell_coords.0 - 1) * 2 + 1, (cell_coords.1 - 1) * 2 + 1)
+}
+fn get_cursor_from_index(cell_index: usize) -> (usize, usize) {
+    get_cursor_from_cell_coords(get_cell_coords_from_index(cell_index))
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cursor_move() {
+        assert_eq!(cursor_left_cell((3, 3)), (1, 3));
+        assert_eq!(cursor_left_cell((2, 3)), (1, 3));
+        assert_eq!(cursor_left_cell((1, 3)), (1, 3));
+        assert_eq!(cursor_left_cell((4, 4)), (3, 4));
+        assert_eq!(cursor_right_cell((1, 1)), (3, 1));
+        assert_eq!(cursor_right_cell((2, 1)), (3, 1));
+        assert_eq!(cursor_right_cell((15, 2)), (17, 2));
+        assert_eq!(cursor_right_cell((16, 1)), (17, 1));
+        assert_eq!(cursor_right_cell((17, 1)), (17, 1));
+        assert_eq!(cursor_up_cell((1, 1)), (1, 1));
+        assert_eq!(cursor_up_cell((1, 2)), (1, 1));
+        assert_eq!(cursor_up_cell((1, 3)), (1, 1));
+        assert_eq!(cursor_up_cell((4, 4)), (4, 3));
+        assert_eq!(cursor_down_cell((1, 17)), (1, 17));
+        assert_eq!(cursor_down_cell((1, 16)), (1, 17));
+        assert_eq!(cursor_down_cell((1, 15)), (1, 17));
+        assert_eq!(cursor_down_cell((2, 14)), (2, 15));
+    }
+    #[test]
+    fn get_index_test() {
+        assert_eq!(get_cell_coords_from_index(11), (1, 1));
+        assert_eq!(get_cell_coords_from_index(99), (9, 9));
+        assert_eq!(get_cell_coords_from_index(72), (2, 7));
+        assert_eq!(get_cursor_from_index(11), (1, 1));
+        assert_eq!(get_cursor_from_index(12), (3, 1));
+        assert_eq!(get_cursor_from_index(37), (13, 5));
+    }
+    #[test]
+    fn test_get_cell_coords() {
+        assert_eq!(get_cell_coords((1, 1)), (1, 1));
+        assert_eq!(get_cursor_from_cell_coords((1, 1)), (1, 1));
+        assert_eq!(get_cell_coords((2, 1)), (1, 1));
+        assert_eq!(get_cell_coords((3, 1)), (2, 1));
+        assert_eq!(get_cursor_from_cell_coords((2, 1)), (3, 1));
+        assert_eq!(get_cell_coords((3, 3)), (2, 2));
+        assert_eq!(get_cursor_from_cell_coords((2, 2)), (3, 3));
+        assert_eq!(get_cell_coords((7, 7)), (4, 4));
+    }
+}

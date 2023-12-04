@@ -19,16 +19,16 @@ fn main() -> Result<(), std::io::Error> {
 
     let rs = event_init(stdin());
     loop {
-        let key_opt = event_wait(&rs);
-        if let Some(Key::Ctrl('c')) = key_opt {
-            break;
-        }
-        let next_state_opt = state.update(&mut data, key_opt);
         let moji = state.draw(&mut data);
         write!(stdout, "{}", moji)?;
         stdout.flush()?;
 
-        if let Some(next_state) = next_state_opt {
+        let key_opt = event_wait(&rs);
+        if let Some(Key::Ctrl('c')) = key_opt {
+            break;
+        }
+
+        if let Some(next_state) = state.update(&mut data, key_opt) {
             state.finalize(&mut data);
             state = next_state;
             state.initialize(&mut data);
