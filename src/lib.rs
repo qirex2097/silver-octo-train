@@ -55,12 +55,6 @@ impl DispField {
 }
 
 impl DispField {
-    pub fn remove_wall_cursor(&mut self, cursor: (usize, usize)) {
-        if cursor.0 < CURSOR_MIN || CURSOR_MAX < cursor.0 { return; }
-        if cursor.1 < CURSOR_MIN || CURSOR_MAX < cursor.1 { return; }
-        if cursor.0 % 2 == 0 && cursor.1 % 2 == 0 { return; }
-        self.disp_arr[cursor.1][cursor.0] = ' ';
-    }
     pub fn toggle_wall_onoff_cursor(&mut self, cursor: (usize, usize)) {
         let (x, y) = cursor;
         let ch = self.disp_arr[y][x];
@@ -225,9 +219,9 @@ mod test2 {
         let mut disp: DispField = DispField::new();
         let v = disp.get_block_from_index(11);
         assert_eq!(v, [11]);
-        disp.remove_wall_cursor((1, 2));
-        disp.remove_wall_cursor((2, 1));
-        disp.remove_wall_cursor((2, 3));
+        disp.disp_arr[2][1] = ' ';
+        disp.disp_arr[1][2] = ' ';
+        disp.disp_arr[3][2] = ' ';
         let v = disp.get_block_from_index(11);
         assert_eq!(v, [11, 12, 21, 22]);
         let v = disp.get_block_from_cursor((2, 1));
@@ -235,7 +229,7 @@ mod test2 {
         let v = disp.get_block_from_index(99);
         assert_eq!(v, [99]);
         let cursor = (17, 17);
-        disp.remove_wall_cursor((cursor.0, cursor.1 - 1));
+        disp.disp_arr[cursor.1 - 1][cursor.0] = ' ';
         let v = disp.get_block_from_index(99);
         assert_eq!(v, [89,99]);
     }

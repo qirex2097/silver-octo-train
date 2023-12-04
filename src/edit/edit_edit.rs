@@ -53,10 +53,22 @@ impl EditState for EditStateEdit {
             }
             self.cursor = cursor;
 
-            if key == Key::Char('H') || key == Key::Char('L') || key == Key::Char('K') ||  key == Key::Char('J') {
-                self.new_disp = handle_remove_wall(&data.disp, cursor, prev_cursor, key);
-            } else if key == Key::Char(' ') {
-                self.new_disp = toggle_wall_onoff_cursor(&data.disp, cursor);
+            let wall_cursor: Option<(usize, usize)> = match key {
+                Key::Char('H') if cursor.0 != prev_cursor.0 => Some((cursor.0 + 1, cursor.1)),
+                Key::Char('L') if cursor.0 != prev_cursor.0 => Some((cursor.0 - 1, cursor.1)),
+                Key::Char('K') if cursor.1 != prev_cursor.1 => Some((cursor.0, cursor.1 + 1)),
+                Key::Char('J') if cursor.1 != prev_cursor.1 => Some((cursor.0, cursor.1 - 1)),
+                Key::Char(' ') => Some(cursor),
+                _ => None,
+            };
+            if let Some(wall_cursor) = wall_cursor {
+                if let Some(ch) = data.disp.get_ch(wall_cursor) {
+                    if cursor == wall_cursor || ch != ' ' {
+                        let mut disp = data.disp.clone();
+                        disp.toggle_wall_onoff_cursor(wall_cursor);
+                        self.new_disp = Some(disp);
+                    }
+                }
             }
 
             if key == Key::Char('v') || key == Key::Char('\n') {
@@ -94,36 +106,6 @@ impl EditState for EditStateEdit {
     fn finalize(&mut self, data: &mut EditData) {
         data.cursor = self.cursor;
     }
-}
-
-fn handle_remove_wall(prev_disp: &DispField, curr_cursor: (usize, usize), prev_cursor: (usize, usize), key: termion::event::Key) -> Option<DispField> {
-    let mut disp = prev_disp.clone();
-
-    let wall_cursor;
-    match key {
-        Key::Char('H') if prev_cursor.0 != curr_cursor.0 => {
-            wall_cursor = (curr_cursor.0 + 1, curr_cursor.1);
-        },
-        Key::Char('L') if prev_cursor.0 != curr_cursor.0 => {
-            wall_cursor = (curr_cursor.0 - 1, curr_cursor.1);
-        },
-        Key::Char('K') if prev_cursor.1 != curr_cursor.1 => {
-            wall_cursor = (curr_cursor.0, curr_cursor.1 + 1);
-        },
-        Key::Char('J') if prev_cursor.1 != curr_cursor.1 => {
-            wall_cursor = (curr_cursor.0, curr_cursor.1 - 1);
-        },
-        _ => { return None; }
-    }
-
-    disp.remove_wall_cursor(wall_cursor);
-    Some(disp)
-}
-
-fn toggle_wall_onoff_cursor(prev_disp: &DispField, cursor: (usize, usize)) -> Option<DispField> {
-    let mut disp = prev_disp.clone();
-    disp.toggle_wall_onoff_cursor(cursor);
-    Some(disp)
 }
 
 fn get_board_moji(disp_arr: &DispArray, base_position: (u16, u16)) -> String {
