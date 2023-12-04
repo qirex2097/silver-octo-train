@@ -6,7 +6,7 @@ use termion::event::Key;
 mod event;
 mod edit;
 use crate::event::*;
-use crate::edit::*;
+use crate::edit::edit_init;
 
 fn main() -> Result<(), std::io::Error> {
     let stdout = stdout().into_alternate_screen()?;
@@ -19,19 +19,23 @@ fn main() -> Result<(), std::io::Error> {
 
     let rs = event_init(stdin());
     loop {
+        let moji = state.draw(&mut data);
+        write!(stdout, "{}", moji)?;
+        stdout.flush()?;
+
         let key_opt = event_wait(&rs);
         if let Some(Key::Ctrl('c')) = key_opt {
             break;
         }
-        let next_state_opt = state.update(&mut data, key_opt);
-        let moji = state.draw(&data);
-        write!(stdout, "{}", moji)?;
-        stdout.flush()?;
 
-        if let Some(next_state) = next_state_opt {
-            state.finalize();
+        if let Some(next_state) = state.update(&mut data, key_opt) {
+            state.finalize(&mut data);
             state = next_state;
             state.initialize(&mut data);
+        }
+
+        if state.is_terminal() {
+            break;
         }
     }
 
