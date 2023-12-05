@@ -65,7 +65,7 @@ impl EditState for EditStateEdit {
                 if let Some(ch) = data.disp.get_ch(wall_cursor) {
                     if cursor == wall_cursor || ch != ' ' {
                         let mut disp = data.disp.clone();
-                        disp.toggle_wall_onoff_cursor(wall_cursor);
+                        disp.toggle_wall_onoff_at_cursor(wall_cursor);
                         self.new_disp = Some(disp);
                     }
                 }

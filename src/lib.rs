@@ -8,6 +8,16 @@ pub struct Block {
     pub cells: Vec<usize>,
     pub value: usize,
 }
+
+impl Block {
+    pub fn push_cells(&mut self, cells: &Vec<usize>) {
+        self.cells.extend(cells);
+        self.cells.sort();
+    }
+    pub fn push_cell(&mut self, cell_index: usize) {
+        self.push_cells(&vec![cell_index]);
+    }
+}
 #[derive(Clone)]
 pub struct DispField {
     pub disp_arr: DispArray,
@@ -55,7 +65,7 @@ impl DispField {
 }
 
 impl DispField {
-    pub fn toggle_wall_onoff_cursor(&mut self, cursor: (usize, usize)) {
+    pub fn toggle_wall_onoff_at_cursor(&mut self, cursor: (usize, usize)) {
         let (x, y) = cursor;
         let ch = self.disp_arr[y][x];
         self.disp_arr[y][x] = match (x % 2, y % 2) {
@@ -63,11 +73,29 @@ impl DispField {
             (0, 1) => { if ch == ' '  { '|' } else { ' ' } }
             _ => { ch }
         };
+        let (cell_0, cell_1) = match (x % 2, y % 2) {
+            (1, 0) => (get_cell_index((x, y - 1)), get_cell_index((x, y + 1))),
+            (0, 1) => (get_cell_index((x - 1, y)), get_cell_index((x + 1, y))),
+            _ => { (0, 0) }
+        };
+        if self.disp_arr[y][x] == ' ' {
+            match (self.get_block_from_index(cell_0), self.get_block_from_index(cell_1)) {
+                (None, None) => { self.push_block_from_index(cell_0); },
+                (Some(block_0), Some(block_1)) => {
+                    let cells:  Vec<usize> = self.blocks[block_1].cells.clone();
+                    self.blocks[block_0].push_cells(&cells);
+                    self.blocks.remove(block_1);
+                },
+                (Some(block_no), None) => { self.blocks[block_no].push_cell(cell_1); },
+                (None, Some(block_no)) => { self.blocks[block_no].push_cell(cell_0); },
+            }
+        } else {
+        }
     }
 }
 
 impl DispField {
-    fn get_block_from_index(&self, cell_index: usize) -> Vec<usize> {
+    fn get_cells_from_index(&self, cell_index: usize) -> Vec<usize> {
         let mut block: Vec<usize> = vec![cell_index];
         let mut stack: Vec<usize> = vec![cell_index];
         while let Some(curr) = stack.pop() {
@@ -121,10 +149,17 @@ impl DispField {
         block
     }
     fn push_block_from_index(&mut self, cell_index: usize) -> Option<&Block> {
-        let v = self.get_block_from_index(cell_index);
+        let v = self.get_cells_from_index(cell_index);
         if v.len() >= 2 {
             self.blocks.push(Block { cells: v, value: 0 });
             self.blocks.last()
+        } else {
+            None
+        }
+    }
+    fn get_block_from_index(&self, cell_index: usize) -> Option<usize> {
+        if let Some(block_no) = self.blocks.iter().position(|block| block.cells.contains(&cell_index)) {
+            Some(block_no)
         } else {
             None
         }
@@ -215,22 +250,22 @@ fn get_down_cell(cell_index: usize) -> Option<usize> {
 mod test2 {
     use super::*;
     #[test]
-    fn test_get_block_from_index() {
+    fn test_get_cells_from_index() {
         let mut disp: DispField = DispField::new();
-        let v = disp.get_block_from_index(11);
+        let v = disp.get_cells_from_index(11);
         assert_eq!(v, [11]);
         disp.disp_arr[2][1] = ' ';
         disp.disp_arr[1][2] = ' ';
         disp.disp_arr[3][2] = ' ';
-        let v = disp.get_block_from_index(11);
+        let v = disp.get_cells_from_index(11);
         assert_eq!(v, [11, 12, 21, 22]);
         let v = disp.get_block_from_cursor((2, 1));
         assert_eq!(disp.blocks[v.unwrap()].cells, [11, 12, 21, 22]);
-        let v = disp.get_block_from_index(99);
+        let v = disp.get_cells_from_index(99);
         assert_eq!(v, [99]);
         let cursor = (17, 17);
         disp.disp_arr[cursor.1 - 1][cursor.0] = ' ';
-        let v = disp.get_block_from_index(99);
+        let v = disp.get_cells_from_index(99);
         assert_eq!(v, [89,99]);
     }
 }
