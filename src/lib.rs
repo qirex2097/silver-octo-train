@@ -76,21 +76,37 @@ impl DispField {
         let (cell_0, cell_1) = match (x % 2, y % 2) {
             (1, 0) => (get_cell_index((x, y - 1)), get_cell_index((x, y + 1))),
             (0, 1) => (get_cell_index((x - 1, y)), get_cell_index((x + 1, y))),
-            _ => { (0, 0) }
+            _ => { return; }
         };
         if self.disp_arr[y][x] == ' ' {
             match (self.get_block_from_index(cell_0), self.get_block_from_index(cell_1)) {
-                (None, None) => { self.push_block_from_index(cell_0); },
-                (Some(block_0), Some(block_1)) => {
-                    let cells:  Vec<usize> = self.blocks[block_1].cells.clone();
-                    self.blocks[block_0].push_cells(&cells);
-                    self.blocks.remove(block_1);
+                (None, None) => { self.generate_block(cell_0); },
+                (Some(block_0_index), Some(block_1_index)) if block_0_index != block_1_index => {
+                    self.merge_block(block_0_index, block_1_index);
                 },
                 (Some(block_no), None) => { self.blocks[block_no].push_cell(cell_1); },
                 (None, Some(block_no)) => { self.blocks[block_no].push_cell(cell_0); },
+                _ => {}
             }
-        } else {
+        } else if let Some(block_index) = self.get_block_from_index(cell_0) {
+            self.split_block(block_index, cell_0, cell_1);
+        } else if let Some(block_index) = self.get_block_from_index(cell_1) {
+            self.split_block(block_index, cell_0, cell_1);
         }
+    }
+    fn generate_block(&mut self, cell: usize) {
+        self.push_block_from_index(cell);
+    }
+    fn merge_block(&mut self, block_0_index: usize, block_1_index: usize) {
+        let cells:  Vec<usize> = self.blocks[block_1_index].cells.clone();
+        self.blocks[block_0_index].push_cells(&cells);
+        self.blocks.remove(block_1_index);
+
+    }
+    fn split_block(&mut self, block_index: usize, cell_0: usize, cell_1: usize) {
+        self.blocks.remove(block_index);
+        self.push_block_from_index(cell_0);
+        self.push_block_from_index(cell_1);
     }
 }
 
@@ -150,35 +166,18 @@ impl DispField {
     }
     fn push_block_from_index(&mut self, cell_index: usize) -> Option<&Block> {
         let v = self.get_cells_from_index(cell_index);
-        if v.len() >= 2 {
+        if v.len() >= 2 && self.get_block_from_index(cell_index).is_none() {
             self.blocks.push(Block { cells: v, value: 0 });
             self.blocks.last()
         } else {
             None
         }
     }
-    fn get_block_from_index(&self, cell_index: usize) -> Option<usize> {
+    pub fn get_block_from_index(&self, cell_index: usize) -> Option<usize> {
         if let Some(block_no) = self.blocks.iter().position(|block| block.cells.contains(&cell_index)) {
             Some(block_no)
         } else {
             None
-        }
-    }
-    pub fn get_block_from_cursor(&mut self, cursor: (usize, usize)) -> Option<usize> {
-        let cell_index = get_cell_index(cursor);
-        if let Some(idx) = self.blocks.iter().position(|block| block.cells.contains(&cell_index)) {
-            Some(idx)
-        } else {
-            match self.get_ch(cursor) {
-                Some(ch) if ch == ' ' => {
-                    if let Some(_) = self.push_block_from_index(cell_index) {
-                        Some(self.blocks.len() - 1)
-                    } else {
-                        None
-                    }
-                }
-                _ => None
-            }
         }
     }
 
@@ -214,7 +213,7 @@ pub fn get_display_coords(cursor: (usize, usize)) -> (u16, u16) {
 fn get_cell_coords(cursor: (usize, usize)) -> (usize, usize) {
     (cursor.0.saturating_sub(1) / 2 + 1, cursor.1.saturating_sub(1) / 2 + 1)
 }
-fn get_cell_index(cursor: (usize, usize)) -> usize {
+pub fn get_cell_index(cursor: (usize, usize)) -> usize {
     let (cell_x, cell_y) = get_cell_coords(cursor);
     cell_y * 10 + cell_x
 }
@@ -254,12 +253,14 @@ mod test2 {
         let mut disp: DispField = DispField::new();
         let v = disp.get_cells_from_index(11);
         assert_eq!(v, [11]);
-        disp.disp_arr[2][1] = ' ';
-        disp.disp_arr[1][2] = ' ';
-        disp.disp_arr[3][2] = ' ';
+        disp.toggle_wall_onoff_at_cursor((2, 1));
+        disp.toggle_wall_onoff_at_cursor((1, 2));
+        disp.toggle_wall_onoff_at_cursor((3, 2));
         let v = disp.get_cells_from_index(11);
         assert_eq!(v, [11, 12, 21, 22]);
-        let v = disp.get_block_from_cursor((2, 1));
+        let cell_index = get_cell_index((1, 1));
+        assert_eq!(cell_index, 11);
+        let v = disp.get_block_from_index(cell_index);
         assert_eq!(disp.blocks[v.unwrap()].cells, [11, 12, 21, 22]);
         let v = disp.get_cells_from_index(99);
         assert_eq!(v, [99]);

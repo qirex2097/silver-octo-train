@@ -72,7 +72,7 @@ impl EditState for EditStateEdit {
             }
 
             if key == Key::Char('v') || key == Key::Char('\n') {
-                if let Some(_pos) = data.disp.get_block_from_cursor(cursor) {
+                if let Some(_pos) = data.disp.get_block_from_index(get_cell_index(cursor)) {
                     self.is_redraw = true;
                     return Some(Box::new(EditStateSetValue::new()))
                 }
@@ -122,15 +122,20 @@ fn get_cell_color(disp: &DispField, base_position: (u16, u16)) -> String {
     for block in disp.blocks.iter() {
         for &cell_index in block.cells.iter() {
             let (x, y) = get_cursor_from_index(cell_index);
-            moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0, y as u16 + base_position.1), CH_COLOR, CH_DEFAULT));
+            let mut put_character = |offset_x: usize, offset_y: usize| {
+                if let Some(ch) = disp.get_ch((x + offset_x, y + offset_y)) {
+                    moji.push_str(&format!("{}{}{}{}", cursor::Goto(x as u16 + base_position.0 + offset_x as u16, y as u16 + base_position.1 + offset_y as u16), CH_COLOR, ch, CH_DEFAULT));
+                }
+            };
+            put_character(0, 0);
             if block.cells.contains(&(cell_index + 1)) {
-                moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0 + 1, y as u16 + base_position.1), CH_COLOR, CH_DEFAULT));
+                put_character(1, 0);
             }
             if block.cells.contains(&(cell_index + 10)) {
-                moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0, y as u16 + base_position.1 + 1), CH_COLOR, CH_DEFAULT));
+                put_character(0, 1);
             }
             if block.cells.contains(&(cell_index + 1)) && block.cells.contains(&(cell_index + 10)) && block.cells.contains(&(cell_index + 11)) {
-                moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0 + 1, y as u16 + base_position.1 + 1), CH_COLOR, CH_DEFAULT));
+                put_character(1, 1);
             }
         }
     }

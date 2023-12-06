@@ -15,9 +15,8 @@ impl EditStateSetValue {
 }
 impl EditState for EditStateSetValue {
     fn initialize(&mut self, data: &mut EditData) {
-//        let cursor = data.disp.get_cursor();
         let cursor = data.cursor;
-        if let Some(pos) = data.disp.get_block_from_cursor(cursor) {
+        if let Some(pos) = data.disp.get_block_from_index(get_cell_index(cursor)) {
             self.block_no = pos;
             let block: &Block = &data.disp.blocks[self.block_no];
             self.value = block.value;
