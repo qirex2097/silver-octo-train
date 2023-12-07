@@ -53,14 +53,26 @@ impl EditState for EditStateEdit {
             }
             self.cursor = cursor;
 
-            if key == Key::Char('H') || key == Key::Char('L') || key == Key::Char('K') ||  key == Key::Char('J') {
-                self.new_disp = handle_remove_wall(&data.disp, cursor, prev_cursor, key);
-            } else if key == Key::Char(' ') {
-                self.new_disp = toggle_wall_onoff_cursor(&data.disp, cursor);
+            let wall_cursor: Option<(usize, usize)> = match key {
+                Key::Char('H') if cursor.0 != prev_cursor.0 => Some((cursor.0 + 1, cursor.1)),
+                Key::Char('L') if cursor.0 != prev_cursor.0 => Some((cursor.0 - 1, cursor.1)),
+                Key::Char('K') if cursor.1 != prev_cursor.1 => Some((cursor.0, cursor.1 + 1)),
+                Key::Char('J') if cursor.1 != prev_cursor.1 => Some((cursor.0, cursor.1 - 1)),
+                Key::Char(' ') => Some(cursor),
+                _ => None,
+            };
+            if let Some(wall_cursor) = wall_cursor {
+                if let Some(ch) = data.disp.get_ch(wall_cursor) {
+                    if cursor == wall_cursor || ch != ' ' {
+                        let mut disp = data.disp.clone();
+                        disp.toggle_wall_onoff_at_cursor(wall_cursor);
+                        self.new_disp = Some(disp);
+                    }
+                }
             }
 
             if key == Key::Char('v') || key == Key::Char('\n') {
-                if let Some(_pos) = data.disp.get_block_from_cursor(cursor) {
+                if let Some(_pos) = data.disp.get_block_from_index(get_cell_index(cursor)) {
                     self.is_redraw = true;
                     return Some(Box::new(EditStateSetValue::new()))
                 }
@@ -96,36 +108,6 @@ impl EditState for EditStateEdit {
     }
 }
 
-fn handle_remove_wall(prev_disp: &DispField, curr_cursor: (usize, usize), prev_cursor: (usize, usize), key: termion::event::Key) -> Option<DispField> {
-    let mut disp = prev_disp.clone();
-
-    let wall_cursor;
-    match key {
-        Key::Char('H') if prev_cursor.0 != curr_cursor.0 => {
-            wall_cursor = (curr_cursor.0 + 1, curr_cursor.1);
-        },
-        Key::Char('L') if prev_cursor.0 != curr_cursor.0 => {
-            wall_cursor = (curr_cursor.0 - 1, curr_cursor.1);
-        },
-        Key::Char('K') if prev_cursor.1 != curr_cursor.1 => {
-            wall_cursor = (curr_cursor.0, curr_cursor.1 + 1);
-        },
-        Key::Char('J') if prev_cursor.1 != curr_cursor.1 => {
-            wall_cursor = (curr_cursor.0, curr_cursor.1 - 1);
-        },
-        _ => { return None; }
-    }
-
-    disp.remove_wall_cursor(wall_cursor);
-    Some(disp)
-}
-
-fn toggle_wall_onoff_cursor(prev_disp: &DispField, cursor: (usize, usize)) -> Option<DispField> {
-    let mut disp = prev_disp.clone();
-    disp.toggle_wall_onoff_cursor(cursor);
-    Some(disp)
-}
-
 fn get_board_moji(disp_arr: &DispArray, base_position: (u16, u16)) -> String {
     let mut moji: String = String::new();
     for (y, line) in disp_arr.iter().enumerate() {
@@ -140,15 +122,20 @@ fn get_cell_color(disp: &DispField, base_position: (u16, u16)) -> String {
     for block in disp.blocks.iter() {
         for &cell_index in block.cells.iter() {
             let (x, y) = get_cursor_from_index(cell_index);
-            moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0, y as u16 + base_position.1), CH_COLOR, CH_DEFAULT));
+            let mut put_character = |offset_x: usize, offset_y: usize| {
+                if let Some(ch) = disp.get_ch((x + offset_x, y + offset_y)) {
+                    moji.push_str(&format!("{}{}{}{}", cursor::Goto(x as u16 + base_position.0 + offset_x as u16, y as u16 + base_position.1 + offset_y as u16), CH_COLOR, ch, CH_DEFAULT));
+                }
+            };
+            put_character(0, 0);
             if block.cells.contains(&(cell_index + 1)) {
-                moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0 + 1, y as u16 + base_position.1), CH_COLOR, CH_DEFAULT));
+                put_character(1, 0);
             }
             if block.cells.contains(&(cell_index + 10)) {
-                moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0, y as u16 + base_position.1 + 1), CH_COLOR, CH_DEFAULT));
+                put_character(0, 1);
             }
             if block.cells.contains(&(cell_index + 1)) && block.cells.contains(&(cell_index + 10)) && block.cells.contains(&(cell_index + 11)) {
-                moji.push_str(&format!("{}{} {}", cursor::Goto(x as u16 + base_position.0 + 1, y as u16 + base_position.1 + 1), CH_COLOR, CH_DEFAULT));
+                put_character(1, 1);
             }
         }
     }
