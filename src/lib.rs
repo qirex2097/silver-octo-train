@@ -17,7 +17,11 @@ impl Block {
     pub fn push_cell(&mut self, cell_index: usize) {
         self.push_cells(&vec![cell_index]);
     }
+    pub fn set_value(&mut self, value: usize) {
+        self.value = value;
+    }
 }
+
 #[derive(Clone)]
 pub struct DispField {
     pub disp_arr: DispArray,
@@ -65,6 +69,12 @@ impl DispField {
 }
 
 impl DispField {
+    pub fn remove_wall_at_cursor(&mut self, cursor: (usize, usize)) {
+        if let Some(' ') = self.get_ch(cursor) {
+            return;
+        }
+        self.toggle_wall_onoff_at_cursor(cursor);
+    }
     pub fn toggle_wall_onoff_at_cursor(&mut self, cursor: (usize, usize)) {
         let (x, y) = cursor;
         let ch = self.disp_arr[y][x];
@@ -80,7 +90,7 @@ impl DispField {
         };
         if self.disp_arr[y][x] == ' ' {
             match (self.get_block_from_index(cell_0), self.get_block_from_index(cell_1)) {
-                (None, None) => { self.generate_block(cell_0); },
+                (None, None) => { self.generate_block(cell_0, 0); },
                 (Some(block_0_index), Some(block_1_index)) if block_0_index != block_1_index => {
                     self.merge_block(block_0_index, block_1_index);
                 },
@@ -94,8 +104,14 @@ impl DispField {
             self.split_block(block_index, cell_0, cell_1);
         }
     }
-    fn generate_block(&mut self, cell: usize) {
-        self.push_block_from_index(cell);
+    fn generate_block(&mut self, cell_index: usize, value: usize) -> Option<&Block> {
+        let v = self.get_cells_from_index(cell_index);
+        if v.len() >= 2 && self.get_block_from_index(cell_index).is_none() {
+            self.blocks.push(Block { cells: v, value: value });
+            self.blocks.last()
+        } else {
+            None
+        }
     }
     fn merge_block(&mut self, block_0_index: usize, block_1_index: usize) {
         let cells:  Vec<usize> = self.blocks[block_1_index].cells.clone();
@@ -104,9 +120,10 @@ impl DispField {
 
     }
     fn split_block(&mut self, block_index: usize, cell_0: usize, cell_1: usize) {
+        let value = self.blocks[block_index].value;
         self.blocks.remove(block_index);
-        self.push_block_from_index(cell_0);
-        self.push_block_from_index(cell_1);
+        self.generate_block(cell_0, value);
+        self.generate_block(cell_1, value);
     }
 }
 
@@ -142,15 +159,6 @@ impl DispField {
         }
         block.sort();
         block
-    }
-    fn push_block_from_index(&mut self, cell_index: usize) -> Option<&Block> {
-        let v = self.get_cells_from_index(cell_index);
-        if v.len() >= 2 && self.get_block_from_index(cell_index).is_none() {
-            self.blocks.push(Block { cells: v, value: 0 });
-            self.blocks.last()
-        } else {
-            None
-        }
     }
     pub fn get_block_from_index(&self, cell_index: usize) -> Option<usize> {
         if let Some(block_no) = self.blocks.iter().position(|block| block.cells.contains(&cell_index)) {
@@ -196,9 +204,8 @@ impl DispField {
         if self.blocks.len() <= block_no {
             return;
         }
-        self.blocks[block_no].value = value;
+        self.blocks[block_no].set_value(value);
     }
-
 }
 
 pub fn get_display_coords(cursor: (usize, usize)) -> (u16, u16) {
@@ -230,21 +237,30 @@ mod test2 {
         let mut disp: DispField = DispField::new();
         let v = disp.get_cells_from_index(11);
         assert_eq!(v, [11]);
-        disp.toggle_wall_onoff_at_cursor((2, 1));
-        disp.toggle_wall_onoff_at_cursor((1, 2));
-        disp.toggle_wall_onoff_at_cursor((3, 2));
+        disp.remove_wall_at_cursor((2, 1));
+        disp.remove_wall_at_cursor((1, 2));
+        disp.remove_wall_at_cursor((3, 2));
+        disp.remove_wall_at_cursor((3, 2));
         let v = disp.get_cells_from_index(11);
         assert_eq!(v, [11, 12, 21, 22]);
         let cell_index = get_cell_index((1, 1));
         assert_eq!(cell_index, 11);
-        let v = disp.get_block_from_index(cell_index);
-        assert_eq!(disp.blocks[v.unwrap()].cells, [11, 12, 21, 22]);
+        if let Some(v) = disp.get_block_from_index(cell_index) {
+            assert_eq!(disp.blocks[v].cells, [11, 12, 21, 22]);
+            disp.blocks[v].set_value(100);
+            assert_eq!(disp.blocks[v].value, 100);
+        } else {
+            assert!(false, "");
+        }
         let v = disp.get_cells_from_index(99);
         assert_eq!(v, [99]);
-        let cursor = (17, 17);
-        disp.disp_arr[cursor.1 - 1][cursor.0] = ' ';
-        let v = disp.get_cells_from_index(99);
-        assert_eq!(v, [89,99]);
+        let mut cursor = get_cursor_from_index(99);
+        cursor.0 = cursor.0 - 1;
+        disp.remove_wall_at_cursor(cursor);
+        if let Some(v) = disp.get_block_from_index(99) {
+            assert_eq!(disp.blocks[v].cells, [98, 99]);
+            disp.blocks[v].set_value(200);
+        }
     }
     #[test]
     fn test_get_connected_cell() {
