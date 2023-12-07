@@ -115,49 +115,28 @@ impl DispField {
         let mut block: Vec<usize> = vec![cell_index];
         let mut stack: Vec<usize> = vec![cell_index];
         while let Some(curr) = stack.pop() {
-            if let Some(left_cell) = get_left_cell(curr) {
+            if let Some(left_cell) = self.get_connected_left_cell(curr) {
                 if !block.contains(&left_cell) {
-                    match self.get_left_wall(curr) {
-                        Some(ch) if ch == ' ' => {
-                            block.push(left_cell);
-                            stack.push(left_cell);
-
-                        }
-                        _ => {}
-                    }
+                    block.push(left_cell);
+                    stack.push(left_cell);
                 }
             }
-            if let Some(right_cell) = get_right_cell(curr) {
+            if let Some(right_cell) = self.get_connected_right_cell(curr) {
                 if !block.contains(&right_cell) {
-                    match self.get_right_wall(curr) {
-                        Some(ch) if ch == ' ' => {
-                            block.push(right_cell);
-                            stack.push(right_cell);
-                        }
-                        _ => {}
-                    }
+                    block.push(right_cell);
+                    stack.push(right_cell);
                 }
             }
-            if let Some(up_cell) = get_up_cell(curr) {
+            if let Some(up_cell) = self.get_connected_up_cell(curr) {
                 if !block.contains(&up_cell) {
-                    match self.get_up_wall(curr) {
-                        Some(ch) if ch == ' ' => {
-                            block.push(up_cell);
-                            stack.push(up_cell);
-                        }
-                        _ => {}
-                    }
+                    block.push(up_cell);
+                    stack.push(up_cell);
                 }
             }
-            if let Some(down_cell) = get_down_cell(curr) {
+            if let Some(down_cell) = self.get_connected_down_cell(curr) {
                 if !block.contains(&down_cell) {
-                    match self.get_down_wall(curr) {
-                        Some(ch) if ch == ' ' => {
-                            block.push(down_cell);
-                            stack.push(down_cell);
-                        }
-                        _ => {}
-                    }
+                    block.push(down_cell);
+                    stack.push(down_cell);
                 }
             }
         }
@@ -181,21 +160,36 @@ impl DispField {
         }
     }
 
-    fn get_left_wall(&self, cell_index: usize) -> Option<char> {
+    fn get_connected_left_cell(&self, cell_index: usize) -> Option<usize> {
         let cursor = get_cursor_from_index(cell_index);
-        self.get_ch((cursor.0 - 1, cursor.1))
+        match self.get_ch((cursor.0 - 1, cursor.1)) {
+            Some(' ') => { Some(cell_index - 1) }
+            _ => { None }
+        }
     }
-    fn get_right_wall(&self, cell_index: usize) -> Option<char> {
+    fn get_connected_right_cell(&self, cell_index: usize) -> Option<usize> {
         let cursor = get_cursor_from_index(cell_index);
-        self.get_ch((cursor.0 + 1, cursor.1))
+        if let Some(' ') = self.get_ch((cursor.0 + 1, cursor.1)) {
+            Some(cell_index + 1)
+        } else {
+            None
+        }
     }
-    fn get_up_wall(&self, cell_index: usize) -> Option<char> {
+    fn get_connected_up_cell(&self, cell_index: usize) -> Option<usize> {
         let cursor = get_cursor_from_index(cell_index);
-        self.get_ch((cursor.0, cursor.1 - 1))
+        if let Some(' ') = self.get_ch((cursor.0, cursor.1 - 1)) {
+            Some(cell_index - 10)
+        } else {
+            None
+        }
     }
-    fn get_down_wall(&self, cell_index: usize) -> Option<char> {
+    fn get_connected_down_cell(&self, cell_index: usize) -> Option<usize> {
         let cursor = get_cursor_from_index(cell_index);
-        self.get_ch((cursor.0, cursor.1 + 1))
+        if let Some(' ') = self.get_ch((cursor.0, cursor.1 + 1)) {
+            Some(cell_index + 10)
+        } else {
+            None
+        }
     }
 
     pub fn set_block_value(&mut self, block_no: usize, value: usize) {
@@ -227,23 +221,6 @@ fn get_cursor_from_cell_coords(cell_coords: (usize, usize)) -> (usize, usize) {
     ((cell_coords.0 - 1) * 2 + 1, (cell_coords.1 - 1) * 2 + 1)
 }
 
-fn get_left_cell(cell_index: usize) -> Option<usize> {
-    if cell_index % 10 == 1 { return None; }
-    Some(cell_index - 1)
-}
-fn get_right_cell(cell_index: usize) -> Option<usize> {
-    if cell_index % 10 == 9 { return None; }
-    Some(cell_index + 1)
-}
-fn get_up_cell(cell_index: usize) -> Option<usize> {
-    if cell_index / 10 == 1 { return None; }
-    Some(cell_index - 10)
-}
-fn get_down_cell(cell_index: usize) -> Option<usize> {
-    if cell_index / 10 == 9 { return None; }
-    Some(cell_index + 10)
-}
-
 
 #[cfg(test)]
 mod test2 {
@@ -268,5 +245,13 @@ mod test2 {
         disp.disp_arr[cursor.1 - 1][cursor.0] = ' ';
         let v = disp.get_cells_from_index(99);
         assert_eq!(v, [89,99]);
+    }
+    #[test]
+    fn test_get_connected_cell() {
+        let mut disp: DispField = DispField::new();
+        assert_eq!(disp.get_connected_left_cell(11), None);
+        assert_eq!(disp.get_connected_left_cell(12), None);
+        disp.disp_arr[1][2] = ' ';
+        assert_eq!(disp.get_connected_left_cell(12), Some(11));
     }
 }
