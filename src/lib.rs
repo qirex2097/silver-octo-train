@@ -1,9 +1,11 @@
+use serde::{Deserialize, Serialize};
+
 pub const GRID_SIZE: usize = 19;
 pub const CURSOR_MIN: usize = 1;
 pub const CURSOR_MAX: usize = 17;
 
 pub type DispArray = [[char; GRID_SIZE]; GRID_SIZE];
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Block {
     pub cells: Vec<usize>,
     pub value: usize,
@@ -31,28 +33,88 @@ pub struct DispField {
 impl DispField {
     pub fn new() -> DispField {
         let disp_arr: [[char; GRID_SIZE]; GRID_SIZE] = [
-            [ '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', ],
-            [ '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ],
-            [ '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', ],
-            [ '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ],
-            [ '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', ],
-            [ '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ],
-            [ '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', ],
-            [ '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ],
-            [ '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', ],
-            [ '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ],
-            [ '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', ],
-            [ '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ],
-            [ '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', ],
-            [ '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ],
-            [ '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', ],
-            [ '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ],
-            [ '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', ],
-            [ '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ],
-            [ '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', ],
+            [
+                '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-',
+                '+', '-', '+',
+            ],
+            [
+                '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ',
+                '|', ' ', '|',
+            ],
+            [
+                '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-',
+                '+', '-', '+',
+            ],
+            [
+                '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ',
+                '|', ' ', '|',
+            ],
+            [
+                '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-',
+                '+', '-', '+',
+            ],
+            [
+                '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ',
+                '|', ' ', '|',
+            ],
+            [
+                '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-',
+                '+', '-', '+',
+            ],
+            [
+                '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ',
+                '|', ' ', '|',
+            ],
+            [
+                '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-',
+                '+', '-', '+',
+            ],
+            [
+                '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ',
+                '|', ' ', '|',
+            ],
+            [
+                '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-',
+                '+', '-', '+',
+            ],
+            [
+                '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ',
+                '|', ' ', '|',
+            ],
+            [
+                '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-',
+                '+', '-', '+',
+            ],
+            [
+                '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ',
+                '|', ' ', '|',
+            ],
+            [
+                '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-',
+                '+', '-', '+',
+            ],
+            [
+                '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ',
+                '|', ' ', '|',
+            ],
+            [
+                '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-',
+                '+', '-', '+',
+            ],
+            [
+                '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ', '|', ' ',
+                '|', ' ', '|',
+            ],
+            [
+                '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-', '+', '-',
+                '+', '-', '+',
+            ],
         ];
 
-        DispField { disp_arr, blocks: vec![], }
+        DispField {
+            disp_arr,
+            blocks: vec![],
+        }
     }
 }
 
@@ -79,23 +141,46 @@ impl DispField {
         let (x, y) = cursor;
         let ch = self.disp_arr[y][x];
         self.disp_arr[y][x] = match (x % 2, y % 2) {
-            (1, 0) => { if ch == ' '  { '-' } else { ' ' } }
-            (0, 1) => { if ch == ' '  { '|' } else { ' ' } }
-            _ => { ch }
+            (1, 0) => {
+                if ch == ' ' {
+                    '-'
+                } else {
+                    ' '
+                }
+            }
+            (0, 1) => {
+                if ch == ' ' {
+                    '|'
+                } else {
+                    ' '
+                }
+            }
+            _ => ch,
         };
         let (cell_0, cell_1) = match (x % 2, y % 2) {
             (1, 0) => (get_cell_index((x, y - 1)), get_cell_index((x, y + 1))),
             (0, 1) => (get_cell_index((x - 1, y)), get_cell_index((x + 1, y))),
-            _ => { return; }
+            _ => {
+                return;
+            }
         };
         if self.disp_arr[y][x] == ' ' {
-            match (self.get_block_from_index(cell_0), self.get_block_from_index(cell_1)) {
-                (None, None) => { self.generate_block(cell_0, 0); },
+            match (
+                self.get_block_from_index(cell_0),
+                self.get_block_from_index(cell_1),
+            ) {
+                (None, None) => {
+                    self.generate_block(cell_0, 0);
+                }
                 (Some(block_0_index), Some(block_1_index)) if block_0_index != block_1_index => {
                     self.merge_block(block_0_index, block_1_index);
-                },
-                (Some(block_no), None) => { self.blocks[block_no].push_cell(cell_1); },
-                (None, Some(block_no)) => { self.blocks[block_no].push_cell(cell_0); },
+                }
+                (Some(block_no), None) => {
+                    self.blocks[block_no].push_cell(cell_1);
+                }
+                (None, Some(block_no)) => {
+                    self.blocks[block_no].push_cell(cell_0);
+                }
                 _ => {}
             }
         } else if let Some(block_index) = self.get_block_from_index(cell_0) {
@@ -105,19 +190,21 @@ impl DispField {
         }
     }
     fn generate_block(&mut self, cell_index: usize, value: usize) -> Option<&Block> {
-        let v = self.get_cells_from_index(cell_index);
+        let v = self.get_connected_cells_from_index(cell_index);
         if v.len() >= 2 && self.get_block_from_index(cell_index).is_none() {
-            self.blocks.push(Block { cells: v, value: value });
+            self.blocks.push(Block {
+                cells: v,
+                value: value,
+            });
             self.blocks.last()
         } else {
             None
         }
     }
     fn merge_block(&mut self, block_0_index: usize, block_1_index: usize) {
-        let cells:  Vec<usize> = self.blocks[block_1_index].cells.clone();
+        let cells: Vec<usize> = self.blocks[block_1_index].cells.clone();
         self.blocks[block_0_index].push_cells(&cells);
         self.blocks.remove(block_1_index);
-
     }
     fn split_block(&mut self, block_index: usize, cell_0: usize, cell_1: usize) {
         let value = self.blocks[block_index].value;
@@ -125,10 +212,34 @@ impl DispField {
         self.generate_block(cell_0, value);
         self.generate_block(cell_1, value);
     }
+    pub fn rebuild_block(&mut self) {
+        let mut walls: Vec<(usize, usize)> = Vec::new();
+
+        for block in self.blocks.iter() {
+            for &cell_index in block.cells.iter() {
+                let (x, y) = get_cursor_from_index(cell_index);
+                if block.cells.contains(&(cell_index - 1)) {
+                    walls.push((x - 1, y));
+                }
+                if block.cells.contains(&(cell_index + 1)) {
+                    walls.push((x + 1, y));
+                }
+                if block.cells.contains(&(cell_index - 10)) {
+                    walls.push((x, y - 1));
+                }
+                if block.cells.contains(&(cell_index + 10)) {
+                    walls.push((x, y + 1));
+                }
+            }
+        }
+        for (x, y) in walls {
+            self.remove_wall_at_cursor((x, y));
+        }
+    }
 }
 
 impl DispField {
-    fn get_cells_from_index(&self, cell_index: usize) -> Vec<usize> {
+    fn get_connected_cells_from_index(&self, cell_index: usize) -> Vec<usize> {
         let mut block: Vec<usize> = vec![cell_index];
         let mut stack: Vec<usize> = vec![cell_index];
         while let Some(curr) = stack.pop() {
@@ -161,7 +272,11 @@ impl DispField {
         block
     }
     pub fn get_block_from_index(&self, cell_index: usize) -> Option<usize> {
-        if let Some(block_no) = self.blocks.iter().position(|block| block.cells.contains(&cell_index)) {
+        if let Some(block_no) = self
+            .blocks
+            .iter()
+            .position(|block| block.cells.contains(&cell_index))
+        {
             Some(block_no)
         } else {
             None
@@ -171,8 +286,8 @@ impl DispField {
     fn get_connected_left_cell(&self, cell_index: usize) -> Option<usize> {
         let cursor = get_cursor_from_index(cell_index);
         match self.get_ch((cursor.0 - 1, cursor.1)) {
-            Some(' ') => { Some(cell_index - 1) }
-            _ => { None }
+            Some(' ') => Some(cell_index - 1),
+            _ => None,
         }
     }
     fn get_connected_right_cell(&self, cell_index: usize) -> Option<usize> {
@@ -212,7 +327,10 @@ pub fn get_display_coords(cursor: (usize, usize)) -> (u16, u16) {
     (cursor.0 as u16 + 1, cursor.1 as u16 + 1)
 }
 fn get_cell_coords(cursor: (usize, usize)) -> (usize, usize) {
-    (cursor.0.saturating_sub(1) / 2 + 1, cursor.1.saturating_sub(1) / 2 + 1)
+    (
+        cursor.0.saturating_sub(1) / 2 + 1,
+        cursor.1.saturating_sub(1) / 2 + 1,
+    )
 }
 pub fn get_cell_index(cursor: (usize, usize)) -> usize {
     let (cell_x, cell_y) = get_cell_coords(cursor);
@@ -228,20 +346,19 @@ fn get_cursor_from_cell_coords(cell_coords: (usize, usize)) -> (usize, usize) {
     ((cell_coords.0 - 1) * 2 + 1, (cell_coords.1 - 1) * 2 + 1)
 }
 
-
 #[cfg(test)]
 mod test2 {
     use super::*;
     #[test]
-    fn test_get_cells_from_index() {
+    fn test_get_connected_cells_from_index() {
         let mut disp: DispField = DispField::new();
-        let v = disp.get_cells_from_index(11);
+        let v = disp.get_connected_cells_from_index(11);
         assert_eq!(v, [11]);
         disp.remove_wall_at_cursor((2, 1));
         disp.remove_wall_at_cursor((1, 2));
         disp.remove_wall_at_cursor((3, 2));
         disp.remove_wall_at_cursor((3, 2));
-        let v = disp.get_cells_from_index(11);
+        let v = disp.get_connected_cells_from_index(11);
         assert_eq!(v, [11, 12, 21, 22]);
         let cell_index = get_cell_index((1, 1));
         assert_eq!(cell_index, 11);
@@ -252,7 +369,7 @@ mod test2 {
         } else {
             assert!(false, "");
         }
-        let v = disp.get_cells_from_index(99);
+        let v = disp.get_connected_cells_from_index(99);
         assert_eq!(v, [99]);
         let mut cursor = get_cursor_from_index(99);
         cursor.0 = cursor.0 - 1;
