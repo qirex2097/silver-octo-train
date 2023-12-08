@@ -87,7 +87,7 @@ impl EditState for EditStateEdit {
                 }
                 Key::Char('r') => {
                     match read_file(&mut data.disp) {
-                        Err(_) => panic!(""),
+                        Err(_) => panic!("couldn't read_file"),
                         Ok(_) => {}
                     }
                     self.is_redraw = true;

@@ -7,18 +7,20 @@ pub struct EditStateFile;
 
 impl EditState for EditStateFile {}
 
+const FILENAME: &str = "src/hello.json";
+
 pub fn write_file(disp: &DispField) -> std::io::Result<()> {
-    let path = Path::new("hello.txt");
+    let path = Path::new(FILENAME);
     let mut file = File::create(&path)?;
 
-    let json_data = serde_json::to_string(&disp.blocks).unwrap();
+    let json_data = serde_json::to_string(&disp.blocks)?;
     file.write_all(json_data.as_bytes())?;
 
     Ok(())
 }
 
 pub fn read_file(disp: &mut DispField) -> std::io::Result<()> {
-    let path = Path::new("hello.txt");
+    let path = Path::new(FILENAME);
     let mut file = File::open(&path)?;
 
     let mut s = String::new();
