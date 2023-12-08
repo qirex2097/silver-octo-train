@@ -1,6 +1,7 @@
+use crate::edit::*;
+use silver_octo_train::block::Block;
 use termion::event::Key;
 use termion::{clear, cursor};
-use crate::edit::*;
 
 pub struct EditStateSetValue {
     block_no: usize,
@@ -10,7 +11,12 @@ pub struct EditStateSetValue {
 }
 impl EditStateSetValue {
     pub fn new() -> Self {
-        EditStateSetValue { block_no: 0, value: 0, is_redraw: true, new_value: 0, }
+        EditStateSetValue {
+            block_no: 0,
+            value: 0,
+            is_redraw: true,
+            new_value: 0,
+        }
     }
 }
 impl EditState for EditStateSetValue {
@@ -48,8 +54,8 @@ impl EditState for EditStateSetValue {
                             new_value += c as usize - '0' as usize;
                         }
                     }
-                    _ => { }
-                }
+                    _ => {}
+                },
                 _ => {}
             }
         }
@@ -64,17 +70,30 @@ impl EditState for EditStateSetValue {
 
         if self.is_redraw {
             moji.push_str(&get_blocks_moji(&data.disp, (21, 1)));
-            moji.push_str(&format!("{}{}", cursor::Goto(21, self.block_no as u16 + 1), cursor::BlinkingUnderline));
+            moji.push_str(&format!(
+                "{}{}",
+                cursor::Goto(21, self.block_no as u16 + 1),
+                cursor::BlinkingUnderline
+            ));
             self.is_redraw = false;
         }
 
         if self.new_value != self.value {
             self.value = self.new_value;
             let (x, y) = get_display_coords(cursor);
-            moji.push_str(&format!("{}{}{}", cursor::Goto(x, y), self.value.to_string(), clear::UntilNewline));
+            moji.push_str(&format!(
+                "{}{}{}",
+                cursor::Goto(x, y),
+                self.value.to_string(),
+                clear::UntilNewline
+            ));
         }
 
-        cursor.0 += if self.value != 0 { self.value.to_string().len() } else { 0 };
+        cursor.0 += if self.value != 0 {
+            self.value.to_string().len()
+        } else {
+            0
+        };
         let (x, y) = get_display_coords(cursor);
         moji.push_str(&format!("{}", cursor::Goto(x, y)));
 
@@ -86,7 +105,11 @@ fn get_blocks_moji(disp: &DispField, base_position: (u16, u16)) -> String {
     let mut moji: String = String::new();
     for (y, block) in disp.blocks.iter().enumerate() {
         let line: String = format!("{:?} {}{}", block.cells, block.value, clear::UntilNewline);
-        moji.push_str(&format!("{}{}", cursor::Goto(base_position.0, y as u16 + base_position.1), line));
+        moji.push_str(&format!(
+            "{}{}",
+            cursor::Goto(base_position.0, y as u16 + base_position.1),
+            line
+        ));
     }
     moji
 }
