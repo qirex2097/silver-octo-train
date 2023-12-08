@@ -1,6 +1,6 @@
-use termion::event::Key;
-use termion::cursor;
 use crate::edit::*;
+use termion::cursor;
+use termion::event::Key;
 
 const CH_COLOR: &str = "\x1b[46m";
 const CH_DEFAULT: &str = "\x1b[49m";
@@ -12,7 +12,11 @@ pub struct EditStateEdit {
 }
 impl EditStateEdit {
     pub fn new() -> Self {
-        EditStateEdit { is_redraw: true, new_disp: None, cursor: (0, 0), }
+        EditStateEdit {
+            is_redraw: true,
+            new_disp: None,
+            cursor: (0, 0),
+        }
     }
 }
 impl EditState for EditStateEdit {
@@ -37,16 +41,16 @@ impl EditState for EditStateEdit {
                 Key::Down => {
                     cursor = cursor_down(cursor);
                 }
-                Key::Char('H') | Key::Char('h')=> {
+                Key::Char('H') | Key::Char('h') => {
                     cursor = cursor_left_cell(cursor);
                 }
                 Key::Char('L') | Key::Char('l') => {
                     cursor = cursor_right_cell(cursor);
                 }
-                Key::Char('K') | Key::Char('k')=> {
+                Key::Char('K') | Key::Char('k') => {
                     cursor = cursor_up_cell(cursor);
                 }
-                Key::Char('J') | Key::Char('j')=> {
+                Key::Char('J') | Key::Char('j') => {
                     cursor = cursor_down_cell(cursor);
                 }
                 _ => {}
@@ -71,18 +75,32 @@ impl EditState for EditStateEdit {
                 }
             }
 
-            if key == Key::Char('v') || key == Key::Char('\n') {
-                if let Some(_pos) = data.disp.get_block_from_index(get_cell_index(cursor)) {
-                    self.is_redraw = true;
-                    return Some(Box::new(EditStateSetValue::new()))
+            match key {
+                Key::Char('v') | Key::Char('\n') => {
+                    if let Some(_pos) = data.disp.get_block_from_index(get_cell_index(cursor)) {
+                        self.is_redraw = true;
+                        return Some(Box::new(EditStateSetValue::new()));
+                    }
                 }
-            }
-
-            if key == Key::Char('r') {
-                self.is_redraw = true;
-            }
-            if key == Key::Char('q') {
-                return Some(Box::new(EditStateTerminal));
+                Key::Char('q') => {
+                    return Some(Box::new(EditStateTerminal));
+                }
+                Key::Char('r') => {
+                    match read_file(&mut data.disp) {
+                        Err(_) => panic!(""),
+                        Ok(_) => {}
+                    }
+                    self.is_redraw = true;
+                }
+                Key::Char('w') => {
+                    // return Some(Box::new(EditStateFile));
+                    match write_file(&data.disp) {
+                        Err(_) => panic!("couldn't write_file"),
+                        Ok(_) => {}
+                    }
+                    return Some(Box::new(EditStateTerminal));
+                }
+                _ => {}
             }
         }
         None
@@ -112,7 +130,11 @@ fn get_board_moji(disp_arr: &DispArray, base_position: (u16, u16)) -> String {
     let mut moji: String = String::new();
     for (y, line) in disp_arr.iter().enumerate() {
         let line: String = line.iter().collect();
-        moji.push_str(&format!("{}{}", cursor::Goto(base_position.0, y as u16 + base_position.1), line));
+        moji.push_str(&format!(
+            "{}{}",
+            cursor::Goto(base_position.0, y as u16 + base_position.1),
+            line
+        ));
     }
     moji
 }
@@ -124,7 +146,16 @@ fn get_cell_color(disp: &DispField, base_position: (u16, u16)) -> String {
             let (x, y) = get_cursor_from_index(cell_index);
             let mut put_character = |offset_x: usize, offset_y: usize| {
                 if let Some(ch) = disp.get_ch((x + offset_x, y + offset_y)) {
-                    moji.push_str(&format!("{}{}{}{}", cursor::Goto(x as u16 + base_position.0 + offset_x as u16, y as u16 + base_position.1 + offset_y as u16), CH_COLOR, ch, CH_DEFAULT));
+                    moji.push_str(&format!(
+                        "{}{}{}{}",
+                        cursor::Goto(
+                            x as u16 + base_position.0 + offset_x as u16,
+                            y as u16 + base_position.1 + offset_y as u16
+                        ),
+                        CH_COLOR,
+                        ch,
+                        CH_DEFAULT
+                    ));
                 }
             };
             put_character(0, 0);
@@ -134,7 +165,10 @@ fn get_cell_color(disp: &DispField, base_position: (u16, u16)) -> String {
             if block.cells.contains(&(cell_index + 10)) {
                 put_character(0, 1);
             }
-            if block.cells.contains(&(cell_index + 1)) && block.cells.contains(&(cell_index + 10)) && block.cells.contains(&(cell_index + 11)) {
+            if block.cells.contains(&(cell_index + 1))
+                && block.cells.contains(&(cell_index + 10))
+                && block.cells.contains(&(cell_index + 11))
+            {
                 put_character(1, 1);
             }
         }
@@ -144,9 +178,10 @@ fn get_cell_color(disp: &DispField, base_position: (u16, u16)) -> String {
 
 pub struct EditStateTerminal;
 impl EditState for EditStateTerminal {
-    fn is_terminal(&self) -> bool { true }
+    fn is_terminal(&self) -> bool {
+        true
+    }
 }
-
 
 fn cursor_left(cursor: (usize, usize)) -> (usize, usize) {
     (std::cmp::max(cursor.0 - 1, CURSOR_MIN), cursor.1)
@@ -161,8 +196,12 @@ fn cursor_down(cursor: (usize, usize)) -> (usize, usize) {
     (cursor.0, std::cmp::min(cursor.1 + 1, CURSOR_MAX))
 }
 fn cursor_left_cell(cursor: (usize, usize)) -> (usize, usize) {
-    let (cell_x, cell_y) = get_cell_coords(cursor);// cursor = 4, 4, cell_x, y = 2, 2
-    let cell_x = if cursor.0 % 2 == 1 { cell_x } else { cell_x + 1 }; // cell_x = 3
+    let (cell_x, cell_y) = get_cell_coords(cursor); // cursor = 4, 4, cell_x, y = 2, 2
+    let cell_x = if cursor.0 % 2 == 1 {
+        cell_x
+    } else {
+        cell_x + 1
+    }; // cell_x = 3
     let (cursor_x, _) = get_cursor_from_cell_coords((std::cmp::max(cell_x - 1, 1), cell_y));
     (cursor_x, cursor.1)
 }
@@ -173,7 +212,11 @@ fn cursor_right_cell(cursor: (usize, usize)) -> (usize, usize) {
 }
 fn cursor_up_cell(cursor: (usize, usize)) -> (usize, usize) {
     let (cell_x, cell_y) = get_cell_coords(cursor);
-    let cell_y = if cursor.1 % 2 == 1 { cell_y } else { cell_y + 1};
+    let cell_y = if cursor.1 % 2 == 1 {
+        cell_y
+    } else {
+        cell_y + 1
+    };
     let (_, cursor_y) = get_cursor_from_cell_coords((cell_x, std::cmp::max(cell_y - 1, 1)));
     (cursor.0, cursor_y)
 }
@@ -187,7 +230,10 @@ fn get_cell_coords_from_index(cell_index: usize) -> (usize, usize) {
     (cell_index % 10, cell_index / 10)
 }
 fn get_cell_coords(cursor: (usize, usize)) -> (usize, usize) {
-    (cursor.0.saturating_sub(1) / 2 + 1, cursor.1.saturating_sub(1) / 2 + 1)
+    (
+        cursor.0.saturating_sub(1) / 2 + 1,
+        cursor.1.saturating_sub(1) / 2 + 1,
+    )
 }
 fn get_cursor_from_cell_coords(cell_coords: (usize, usize)) -> (usize, usize) {
     ((cell_coords.0 - 1) * 2 + 1, (cell_coords.1 - 1) * 2 + 1)
@@ -195,7 +241,6 @@ fn get_cursor_from_cell_coords(cell_coords: (usize, usize)) -> (usize, usize) {
 fn get_cursor_from_index(cell_index: usize) -> (usize, usize) {
     get_cursor_from_cell_coords(get_cell_coords_from_index(cell_index))
 }
-
 
 #[cfg(test)]
 mod tests {
