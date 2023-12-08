@@ -1,9 +1,11 @@
 use termion::event::Key;
 
+pub mod edit_calc;
 pub mod edit_edit;
 pub mod edit_file;
 pub mod edit_init;
 pub mod edit_value;
+use crate::edit::edit_calc::EditStateCalc;
 use crate::edit::edit_edit::EditStateEdit;
 use crate::edit::edit_file::{read_file, write_file};
 use crate::edit::edit_init::EditStateInit;
