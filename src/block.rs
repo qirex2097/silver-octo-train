@@ -40,9 +40,6 @@ impl Block {
 }
 
 impl Block {
-    fn _search_combination_for_product(&self) -> Vec<u8> {
-        vec![0]
-    }
     fn _search_combination_for_division(&self) -> Vec<u8> {
         vec![0]
     }
@@ -81,6 +78,40 @@ impl Block {
 
         self.find_candidate_combinations(&combinations)
     }
+    pub fn search_combination_for_product(&self) -> Vec<Vec<u8>> {
+        let combinations = {
+            let mut stack: Vec<(Vec<u8>, usize)> = Vec::new();
+            let mut result: Vec<Vec<u8>> = Vec::new();
+
+            for digit in 1..=std::cmp::min(self.value, 9) {
+                stack.push((vec![digit as u8], digit));
+            }
+            while let Some((mut combination, product)) = stack.pop() {
+                if product == self.value {
+                    while combination.len() < self.cells.len() {
+                        combination.push(1);
+                    }
+                    result.push(combination);
+                } else if product < self.value && combination.len() < self.cells.len() {
+                    let max_digit = if let Some(&max) = combination.iter().min() {
+                        max
+                    } else {
+                        9
+                    };
+                    for digit in 1..=max_digit {
+                        if product * digit as usize <= self.value {
+                            let mut combination = combination.clone();
+                            combination.push(digit as u8);
+                            stack.push((combination, product * digit as usize));
+                        }
+                    }
+                }
+            }
+            result
+        };
+
+        self.find_candidate_combinations(&combinations)
+    }
     fn find_candidate_combinations(&self, combinations: &Vec<Vec<u8>>) -> Vec<Vec<u8>> {
         let mut result: Vec<Vec<u8>> = Vec::new();
         for combination in combinations {
@@ -109,6 +140,36 @@ impl Block {
 #[cfg(test)]
 mod test_block {
     use super::*;
+    #[test]
+    fn test_search_combination_for_product() {
+        let block = Block {
+            cells: vec![11, 12],
+            value: 1,
+        };
+        let combi = block.search_combination_for_product();
+        assert_eq!(combi.len(), 0);
+
+        let block = Block {
+            cells: vec![11, 12],
+            value: 2,
+        };
+        let combi = block.search_combination_for_product();
+        assert_eq!(combi.len(), 2);
+
+        let block = Block {
+            cells: vec![11, 21, 31],
+            value: 12,
+        };
+        let combi = block.search_combination_for_product();
+        assert_eq!(combi.len(), 12);
+
+        let block = Block {
+            cells: vec![11, 21, 22, 32],
+            value: 24,
+        };
+        let combi = block.search_combination_for_product();
+        assert_eq!(combi.len(), 42);
+    }
     #[test]
     fn test_search_combination_for_sum() {
         let block = Block {
