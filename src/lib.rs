@@ -1,29 +1,11 @@
-use serde::{Deserialize, Serialize};
+pub mod block;
+use crate::block::Block;
 
 pub const GRID_SIZE: usize = 19;
 pub const CURSOR_MIN: usize = 1;
 pub const CURSOR_MAX: usize = 17;
 
 pub type DispArray = [[char; GRID_SIZE]; GRID_SIZE];
-#[derive(Clone, Serialize, Deserialize)]
-pub struct Block {
-    pub cells: Vec<usize>,
-    pub value: usize,
-}
-
-impl Block {
-    pub fn push_cells(&mut self, cells: &Vec<usize>) {
-        self.cells.extend(cells);
-        self.cells.sort();
-    }
-    pub fn push_cell(&mut self, cell_index: usize) {
-        self.push_cells(&vec![cell_index]);
-    }
-    pub fn set_value(&mut self, value: usize) {
-        self.value = value;
-    }
-}
-
 #[derive(Clone)]
 pub struct DispField {
     pub disp_arr: DispArray,
@@ -347,7 +329,7 @@ fn get_cursor_from_cell_coords(cell_coords: (usize, usize)) -> (usize, usize) {
 }
 
 #[cfg(test)]
-mod test2 {
+mod test {
     use super::*;
     #[test]
     fn test_get_connected_cells_from_index() {

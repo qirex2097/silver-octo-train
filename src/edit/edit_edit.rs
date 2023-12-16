@@ -82,6 +82,9 @@ impl EditState for EditStateEdit {
                         return Some(Box::new(EditStateSetValue::new()));
                     }
                 }
+                Key::Char('c') => {
+                    return Some(Box::new(EditStateCalc));
+                }
                 Key::Char('q') => {
                     return Some(Box::new(EditStateTerminal));
                 }
