@@ -40,17 +40,19 @@ impl Block {
 }
 
 impl Block {
-    fn _search_combination_for_division(&self) -> Vec<u8> {
-        vec![0]
-    }
-    fn _search_combination_for_difference(&self) -> Vec<u8> {
-        vec![0]
-    }
-}
+    pub fn search_combination(&self) -> Vec<Vec<u8>> {
+        let result1 = self.search_combination_for_sum();
+        let result2 = self.search_combination_for_product();
+        let result3 = self.search_combination_for_difference();
+        let result4 = self.search_combination_for_division();
+        let unique_elements: std::collections::HashSet<_> = [result1, result2, result3, result4]
+            .concat()
+            .drain(..)
+            .collect();
 
-//----------------------------------------
-impl Block {
-    pub fn search_combination_for_sum(&self) -> Vec<Vec<u8>> {
+        unique_elements.into_iter().collect()
+    }
+    fn search_combination_for_sum(&self) -> Vec<Vec<u8>> {
         let combinations = {
             let mut stack: Vec<(Vec<u8>, usize)> = Vec::new();
             let mut result: Vec<Vec<u8>> = Vec::new();
@@ -78,7 +80,7 @@ impl Block {
 
         self.find_candidate_combinations(&combinations)
     }
-    pub fn search_combination_for_product(&self) -> Vec<Vec<u8>> {
+    fn search_combination_for_product(&self) -> Vec<Vec<u8>> {
         let combinations = {
             let mut stack: Vec<(Vec<u8>, usize)> = Vec::new();
             let mut result: Vec<Vec<u8>> = Vec::new();
@@ -104,6 +106,44 @@ impl Block {
                             combination.push(digit as u8);
                             stack.push((combination, product * digit as usize));
                         }
+                    }
+                }
+            }
+            result
+        };
+
+        self.find_candidate_combinations(&combinations)
+    }
+    fn search_combination_for_difference(&self) -> Vec<Vec<u8>> {
+        if self.cells.len() != 2 {
+            return vec![];
+        }
+
+        let combinations = {
+            let mut result: Vec<Vec<u8>> = Vec::new();
+            for i in 1..=8 {
+                for j in i + 1..=9 {
+                    if j - i == self.value {
+                        result.push(vec![i as u8, j as u8]);
+                    }
+                }
+            }
+            result
+        };
+
+        self.find_candidate_combinations(&combinations)
+    }
+    fn search_combination_for_division(&self) -> Vec<Vec<u8>> {
+        if self.cells.len() != 2 {
+            return vec![];
+        }
+
+        let combinations = {
+            let mut result: Vec<Vec<u8>> = Vec::new();
+            for i in 1..=9 {
+                for j in i..=9 {
+                    if j / i == self.value && i * self.value == j {
+                        result.push(vec![i as u8, j as u8]);
                     }
                 }
             }
@@ -140,6 +180,33 @@ impl Block {
 #[cfg(test)]
 mod test_block {
     use super::*;
+    #[test]
+    fn test_search_combination() {
+        let block = Block {
+            cells: vec![11, 12],
+            value: 8,
+        };
+        let combi = block.search_combination();
+        assert_eq!(combi.len(), 12);
+    }
+    #[test]
+    fn test_search_combination_for_division() {
+        let block = Block {
+            cells: vec![11, 12],
+            value: 3,
+        };
+        let combi = block.search_combination_for_division();
+        assert_eq!(combi.len(), 6);
+    }
+    #[test]
+    fn test_search_combination_for_difference() {
+        let block = Block {
+            cells: vec![11, 12],
+            value: 1,
+        };
+        let combi = block.search_combination_for_difference();
+        assert_eq!(combi.len(), 16);
+    }
     #[test]
     fn test_search_combination_for_product() {
         let block = Block {
