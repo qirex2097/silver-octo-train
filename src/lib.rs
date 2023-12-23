@@ -1,3 +1,5 @@
+use termion::{clear, cursor};
+
 pub mod block;
 use crate::block::Block;
 
@@ -368,5 +370,70 @@ mod test {
         assert_eq!(disp.get_connected_left_cell(12), None);
         disp.disp_arr[1][2] = ' ';
         assert_eq!(disp.get_connected_left_cell(12), Some(11));
+    }
+}
+
+const CH_COLOR: &str = "\x1b[46m";
+const CH_DEFAULT: &str = "\x1b[49m";
+impl DispField {
+    pub fn get_board_moji(&self, base_position: (u16, u16)) -> String {
+        let mut moji: String = String::new();
+        for (y, line) in self.disp_arr.iter().enumerate() {
+            let line: String = line.iter().collect();
+            moji.push_str(&format!(
+                "{}{}",
+                cursor::Goto(base_position.0, y as u16 + base_position.1),
+                line
+            ));
+        }
+        moji
+    }
+    pub fn get_cell_color(&self, base_position: (u16, u16)) -> String {
+        let mut moji = String::new();
+        for block in self.blocks.iter() {
+            for &cell_index in block.cells.iter() {
+                let (x, y) = get_cursor_from_index(cell_index);
+                let mut put_character = |offset_x: usize, offset_y: usize| {
+                    if let Some(ch) = self.get_ch((x + offset_x, y + offset_y)) {
+                        moji.push_str(&format!(
+                            "{}{}{}{}",
+                            cursor::Goto(
+                                x as u16 + base_position.0 + offset_x as u16,
+                                y as u16 + base_position.1 + offset_y as u16
+                            ),
+                            CH_COLOR,
+                            ch,
+                            CH_DEFAULT
+                        ));
+                    }
+                };
+                put_character(0, 0);
+                if block.cells.contains(&(cell_index + 1)) {
+                    put_character(1, 0);
+                }
+                if block.cells.contains(&(cell_index + 10)) {
+                    put_character(0, 1);
+                }
+                if block.cells.contains(&(cell_index + 1))
+                    && block.cells.contains(&(cell_index + 10))
+                    && block.cells.contains(&(cell_index + 11))
+                {
+                    put_character(1, 1);
+                }
+            }
+        }
+        moji
+    }
+    pub fn get_blocks_moji(&self, base_position: (u16, u16)) -> String {
+        let mut moji: String = String::new();
+        for (y, block) in self.blocks.iter().enumerate() {
+            let line: String = format!("{:?} {}{}", block.cells, block.value, clear::UntilNewline);
+            moji.push_str(&format!(
+                "{}{}",
+                cursor::Goto(base_position.0, y as u16 + base_position.1),
+                line
+            ));
+        }
+        moji
     }
 }

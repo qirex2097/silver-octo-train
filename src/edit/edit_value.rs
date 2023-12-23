@@ -69,7 +69,8 @@ impl EditState for EditStateSetValue {
         let mut cursor: (usize, usize) = (21 + block.cells.len() * 4, self.block_no);
 
         if self.is_redraw {
-            moji.push_str(&get_blocks_moji(&data.disp, (21, 1)));
+            let block_moji = data.disp.get_blocks_moji((21, 1));
+            moji.push_str(&block_moji);
             moji.push_str(&format!(
                 "{}{}",
                 cursor::Goto(21, self.block_no as u16 + 1),
@@ -99,17 +100,4 @@ impl EditState for EditStateSetValue {
 
         moji
     }
-}
-
-fn get_blocks_moji(disp: &DispField, base_position: (u16, u16)) -> String {
-    let mut moji: String = String::new();
-    for (y, block) in disp.blocks.iter().enumerate() {
-        let line: String = format!("{:?} {}{}", block.cells, block.value, clear::UntilNewline);
-        moji.push_str(&format!(
-            "{}{}",
-            cursor::Goto(base_position.0, y as u16 + base_position.1),
-            line
-        ));
-    }
-    moji
 }
