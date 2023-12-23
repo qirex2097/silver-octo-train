@@ -2,9 +2,6 @@ use crate::edit::*;
 use termion::cursor;
 use termion::event::Key;
 
-const CH_COLOR: &str = "\x1b[46m";
-const CH_DEFAULT: &str = "\x1b[49m";
-
 pub struct EditStateEdit {
     is_redraw: bool,
     new_disp: Option<DispField>,
@@ -83,7 +80,7 @@ impl EditState for EditStateEdit {
                     }
                 }
                 Key::Char('c') => {
-                    return Some(Box::new(EditStateCalc));
+                    return Some(Box::new(EditStateCalc::new()));
                 }
                 Key::Char('q') => {
                     return Some(Box::new(EditStateTerminal));
@@ -115,8 +112,10 @@ impl EditState for EditStateEdit {
             self.is_redraw = true;
         }
         if self.is_redraw {
-            moji.push_str(&get_board_moji(data.disp.get_disp_arr(), (1, 1)));
-            moji.push_str(&get_cell_color(&data.disp, (1, 1)));
+            let board_moji = data.disp.get_board_moji((1, 1));
+            moji.push_str(&board_moji);
+            let cell_color = data.disp.get_cell_color((1, 1));
+            moji.push_str(&cell_color);
             moji.push_str(&format!("{}", cursor::BlinkingBlock));
             self.is_redraw = false;
         }
@@ -127,56 +126,6 @@ impl EditState for EditStateEdit {
     fn finalize(&mut self, data: &mut EditData) {
         data.cursor = self.cursor;
     }
-}
-
-fn get_board_moji(disp_arr: &DispArray, base_position: (u16, u16)) -> String {
-    let mut moji: String = String::new();
-    for (y, line) in disp_arr.iter().enumerate() {
-        let line: String = line.iter().collect();
-        moji.push_str(&format!(
-            "{}{}",
-            cursor::Goto(base_position.0, y as u16 + base_position.1),
-            line
-        ));
-    }
-    moji
-}
-
-fn get_cell_color(disp: &DispField, base_position: (u16, u16)) -> String {
-    let mut moji = String::new();
-    for block in disp.blocks.iter() {
-        for &cell_index in block.cells.iter() {
-            let (x, y) = get_cursor_from_index(cell_index);
-            let mut put_character = |offset_x: usize, offset_y: usize| {
-                if let Some(ch) = disp.get_ch((x + offset_x, y + offset_y)) {
-                    moji.push_str(&format!(
-                        "{}{}{}{}",
-                        cursor::Goto(
-                            x as u16 + base_position.0 + offset_x as u16,
-                            y as u16 + base_position.1 + offset_y as u16
-                        ),
-                        CH_COLOR,
-                        ch,
-                        CH_DEFAULT
-                    ));
-                }
-            };
-            put_character(0, 0);
-            if block.cells.contains(&(cell_index + 1)) {
-                put_character(1, 0);
-            }
-            if block.cells.contains(&(cell_index + 10)) {
-                put_character(0, 1);
-            }
-            if block.cells.contains(&(cell_index + 1))
-                && block.cells.contains(&(cell_index + 10))
-                && block.cells.contains(&(cell_index + 11))
-            {
-                put_character(1, 1);
-            }
-        }
-    }
-    moji
 }
 
 pub struct EditStateTerminal;
@@ -229,9 +178,6 @@ fn cursor_down_cell(cursor: (usize, usize)) -> (usize, usize) {
     (cursor.0, cursor_y)
 }
 
-fn get_cell_coords_from_index(cell_index: usize) -> (usize, usize) {
-    (cell_index % 10, cell_index / 10)
-}
 fn get_cell_coords(cursor: (usize, usize)) -> (usize, usize) {
     (
         cursor.0.saturating_sub(1) / 2 + 1,
@@ -240,9 +186,6 @@ fn get_cell_coords(cursor: (usize, usize)) -> (usize, usize) {
 }
 fn get_cursor_from_cell_coords(cell_coords: (usize, usize)) -> (usize, usize) {
     ((cell_coords.0 - 1) * 2 + 1, (cell_coords.1 - 1) * 2 + 1)
-}
-fn get_cursor_from_index(cell_index: usize) -> (usize, usize) {
-    get_cursor_from_cell_coords(get_cell_coords_from_index(cell_index))
 }
 
 #[cfg(test)]
@@ -268,15 +211,6 @@ mod tests {
         assert_eq!(cursor_down_cell((1, 16)), (1, 17));
         assert_eq!(cursor_down_cell((1, 15)), (1, 17));
         assert_eq!(cursor_down_cell((2, 14)), (2, 15));
-    }
-    #[test]
-    fn get_index_test() {
-        assert_eq!(get_cell_coords_from_index(11), (1, 1));
-        assert_eq!(get_cell_coords_from_index(99), (9, 9));
-        assert_eq!(get_cell_coords_from_index(72), (2, 7));
-        assert_eq!(get_cursor_from_index(11), (1, 1));
-        assert_eq!(get_cursor_from_index(12), (3, 1));
-        assert_eq!(get_cursor_from_index(37), (13, 5));
     }
     #[test]
     fn test_get_cell_coords() {
